@@ -135,7 +135,7 @@ const AdminDashboardScreen: React.FC = () => {
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Total Revenue" value="GHS 28,000" icon={<DollarSignIcon />} />
+                <StatCard title="Total Revenue" value="$5,600" icon={<DollarSignIcon />} />
                 <StatCard title="Active Trips" value="12" icon={<CarIcon />} />
                 <StatCard title="Online Drivers" value="45" icon={<UsersIcon />} />
                 <StatCard title="System Health" value="Operational" icon={<ShieldIcon />} status="ok" />
@@ -294,8 +294,8 @@ const SystemConfigScreen: React.FC = () => (
       <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="font-bold text-xl mb-4">Pricing Rules</h3>
           <div className="space-y-4">
-              <Input label="Base Fare (GHS)" id="baseFare" type="number" defaultValue="15" />
-              <Input label="Per Kilometer Rate (GHS)" id="kmRate" type="number" defaultValue="2.5" />
+              <Input label="Base Fare ($)" id="baseFare" type="number" defaultValue="3" />
+              <Input label="Per Kilometer Rate ($)" id="kmRate" type="number" step="0.1" defaultValue="0.5" />
           </div>
       </div>
       <div className="bg-white p-6 rounded-lg shadow-md">

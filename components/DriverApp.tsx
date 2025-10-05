@@ -152,7 +152,7 @@ const DriverDashboardScreen: React.FC<NavigationProps> = ({ navigate, logout }) 
 
             <div className="mt-4 bg-primary text-white p-4 rounded-lg text-center">
                  <p className="text-sm">Today's Earnings</p>
-                 <p className="text-4xl font-bold">GHS 150.00</p>
+                 <p className="text-4xl font-bold">$30.00</p>
             </div>
              <div className="mt-4">
                 <h3 className="font-bold text-lg mb-2">Awaiting Trip Request...</h3>
@@ -179,7 +179,7 @@ const TripRequestScreen: React.FC<NavigationProps> = ({ navigate }) => (
             <div className="my-4 text-left space-y-1">
                 <p><strong>Pickup:</strong> Kotoka Int'l Airport</p>
                 <p><strong>Destination:</strong> Accra Mall</p>
-                <p><strong>Fare:</strong> <span className="font-bold text-green-600">GHS 50.00 (PREPAID)</span></p>
+                <p><strong>Fare:</strong> <span className="font-bold text-green-600">$10.00 (PREPAID)</span></p>
             </div>
             <div className="flex space-x-2">
                 <Button variant="secondary" onClick={() => navigate('DriverDashboard')}>Decline</Button>
@@ -224,8 +224,8 @@ const DriverTripCompletionScreen: React.FC<NavigationProps> = ({ navigate }) => 
             <h2 className="text-2xl font-bold font-display">Trip Completed!</h2>
             <div className="bg-gray-50 p-4 rounded-lg my-6 text-left">
                 <h3 className="font-bold text-lg mb-2">Earnings Summary</h3>
-                <div className="flex justify-between"><span>Trip Fare</span><span>GHS 50.00</span></div>
-                <div className="flex justify-between font-bold text-lg mt-2 pt-2 border-t"><span>Total Earned</span><span>GHS 50.00</span></div>
+                <div className="flex justify-between"><span>Trip Fare</span><span>$10.00</span></div>
+                <div className="flex justify-between font-bold text-lg mt-2 pt-2 border-t"><span>Total Earned</span><span>$10.00</span></div>
             </div>
              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                 <UploadCloudIcon className="mx-auto h-12 w-12 text-gray-400" />
@@ -250,7 +250,7 @@ const EarningsDashboardScreen: React.FC<NavigationProps> = ({ navigate }) => {
             <div className="p-4">
                 <div className="bg-primary text-white p-4 rounded-lg text-center mb-4">
                      <p className="text-sm">This Week's Total</p>
-                     <p className="text-4xl font-bold">GHS 1190.00</p>
+                     <p className="text-4xl font-bold">$238.00</p>
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow">
                     <h3 className="font-bold text-lg mb-4">Weekly Performance</h3>

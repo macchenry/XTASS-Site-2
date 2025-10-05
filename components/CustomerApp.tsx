@@ -220,7 +220,7 @@ const CompatibleShuttlesListScreen: React.FC<NavigationProps> = ({ navigate }) =
                         <p className="text-sm text-gray-500">5 mins away</p>
                     </div>
                     <div className="text-right">
-                        <p className="text-lg font-bold text-primary">GHS 50.00</p>
+                        <p className="text-lg font-bold text-primary">$10.00</p>
                         <div className="flex items-center text-yellow-500">
                            <UserIcon className="w-4 h-4 mr-1" /> 4.8
                         </div>
@@ -268,7 +268,7 @@ const BookingConfirmationScreen: React.FC<NavigationProps> = ({ navigate }) => (
                 </div>
                 <div className="mt-4 pt-4 border-t flex justify-between items-center">
                     <span className="text-lg font-semibold">Total Cost:</span>
-                    <span className="text-2xl font-bold text-primary">GHS 50.00</span>
+                    <span className="text-2xl font-bold text-primary">$10.00</span>
                 </div>
             </div>
              <div className="mt-4 flex items-start space-x-2">
@@ -356,8 +356,8 @@ const TripCompletionReceiptScreen: React.FC<NavigationProps> = ({ navigate }) =>
             <p className="text-lg text-gray-600">Your trip to Accra Mall is complete.</p>
             <div className="bg-gray-50 p-4 rounded-lg my-6 text-left">
                 <h3 className="font-bold text-lg mb-2">Receipt</h3>
-                <div className="flex justify-between"><span>Base Fare</span><span>GHS 50.00</span></div>
-                <div className="flex justify-between font-bold text-lg mt-2 pt-2 border-t"><span>Total Paid</span><span>GHS 50.00</span></div>
+                <div className="flex justify-between"><span>Base Fare</span><span>$10.00</span></div>
+                <div className="flex justify-between font-bold text-lg mt-2 pt-2 border-t"><span>Total Paid</span><span>$10.00</span></div>
             </div>
             <div className="my-6">
                 <h3 className="font-bold text-lg mb-2">Rate Your Driver</h3>
@@ -385,7 +385,7 @@ const TripHistoryScreen: React.FC<NavigationProps> = ({ navigate }) => (
                         <p className="text-sm text-gray-500">Oct 26, 2023</p>
                     </div>
                     <div className="text-right">
-                        <p className="font-bold text-primary">GHS 50.00</p>
+                        <p className="font-bold text-primary">$10.00</p>
                         <p className={`text-sm font-semibold text-${trip.color} flex items-center justify-end`}>{React.cloneElement(trip.icon, { className: 'w-4 h-4 mr-1' })} {trip.status}</p>
                     </div>
                 </div>
@@ -411,7 +411,7 @@ const TripDetailsViewScreen: React.FC<NavigationProps> = ({ navigate }) => (
                 </div>
                 <div className="mt-4 pt-4 border-t flex justify-between items-center">
                     <span className="text-lg font-semibold">Total Paid:</span>
-                    <span className="text-2xl font-bold text-primary">GHS 50.00</span>
+                    <span className="text-2xl font-bold text-primary">$10.00</span>
                 </div>
             </div>
              <div className="mt-4">
