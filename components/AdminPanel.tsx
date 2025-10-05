@@ -5,7 +5,7 @@ import type { Screen, NavigationProps } from '../types';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Button, Input } from './shared/UI';
 // FIX: Import all necessary icons for the admin panel.
-import { UserIcon, LockIcon, MenuIcon, CarIcon, DollarSignIcon, UsersIcon, ShieldIcon, BarChart2Icon, MapPinIcon, SettingsIcon, LogOutIcon } from './Icons';
+import { UserIcon, LockIcon, MenuIcon, CarIcon, DollarSignIcon, UsersIcon, ShieldIcon, BarChart2Icon, MapPinIcon, SettingsIcon, LogOutIcon, ChevronLeftIcon, SearchIcon, BusIcon } from './Icons';
 
 interface AdminPanelProps extends NavigationProps {
   screen: Screen;
@@ -77,7 +77,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, screen, navigate, l
         {/* Main Content */}
         <main className="flex-1 flex flex-col overflow-hidden">
             <header className="bg-white shadow-md p-4 flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">{screen.replace('Admin', '')}</h2>
+                <div className="flex items-center">
+                    {screen !== 'AdminDashboard' && (
+                        <button onClick={() => navigate('AdminDashboard')} title="Back to Dashboard" className="text-primary p-1 rounded-full hover:bg-gray-100 mr-3">
+                            <ChevronLeftIcon className="w-6 h-6" />
+                        </button>
+                    )}
+                    <h2 className="text-2xl font-bold text-gray-800">{screen === 'LiveOperations' ? 'Live Operations' : screen.replace('Admin', '')}</h2>
+                </div>
                 <div>
                     <UserIcon className="w-8 h-8 text-gray-600"/>
                 </div>
@@ -221,14 +228,66 @@ const DriverRow: React.FC<{name: string, station: string, status: 'Approved' | '
 };
 
 
-const LiveOperationsScreen: React.FC = () => (
-  <div className="bg-white rounded-lg shadow-md h-full flex flex-col">
-    <h3 className="font-bold text-xl p-6 border-b">Live Operations Command Center</h3>
-    <div className="flex-1 bg-gray-300 flex items-center justify-center">
-      <p className="text-gray-600 font-semibold text-2xl">Live Map Placeholder</p>
+const LiveOperationsScreen: React.FC = () => {
+  const activeDrivers = [
+    { name: 'John Doe', status: 'On Trip', location: 'Spintex Road', destination: 'Accra Mall' },
+    { name: 'Jane Smith', status: 'Idle', location: 'East Legon', destination: '' },
+    { name: 'Kwesi Mensah', status: 'On Trip', location: 'Dzorwulu', destination: 'Airport' },
+    { name: 'Adwoa Williams', status: 'Idle', location: 'Cantonments', destination: '' },
+    { name: 'Yaw Boateng', status: 'On Trip', location: 'Labadi', destination: 'Osu' },
+    { name: 'Akua Mansa', status: 'Idle', location: 'Airport Hills', destination: '' },
+    { name: 'Kojo Antwi', status: 'Idle', location: 'Roman Ridge', destination: '' },
+  ];
+
+  return (
+    <div className="bg-white rounded-lg shadow-md h-full flex overflow-hidden -m-6">
+      {/* Map Section */}
+      <div className="w-2/3 bg-gray-200 flex items-center justify-center">
+        <p className="text-gray-500 font-semibold text-2xl">Live Map Placeholder</p>
+      </div>
+
+      {/* Driver List Sidebar */}
+      <div className="w-1/3 border-l border-gray-200 flex flex-col bg-white">
+        <div className="p-4 border-b border-gray-200">
+          <h3 className="font-bold text-lg">Active Drivers ({activeDrivers.length})</h3>
+          <div className="relative mt-2">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by name or location..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-hover"
+            />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {activeDrivers.map((driver, index) => (
+            <div key={index} className="p-4 border-b border-gray-200 last:border-b-0">
+              <div className="flex justify-between items-start">
+                <h4 className="font-bold text-gray-800">{driver.name}</h4>
+                <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${driver.status === 'On Trip' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                  {driver.status}
+                </span>
+              </div>
+              <div className="mt-2 text-sm text-gray-600 space-y-1">
+                <div className="flex items-center">
+                  <MapPinIcon className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0" />
+                  <span>{driver.location}</span>
+                </div>
+                {driver.status === 'On Trip' && (
+                  <div className="flex items-center">
+                    <BusIcon className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0" />
+                    <span>To: {driver.destination}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
 
 const SystemConfigScreen: React.FC = () => (
   <div className="space-y-6">
