@@ -617,7 +617,8 @@ const OTPScreen: React.FC<{ navigate: (s: Screen) => void, onBack: () => void, s
                                     onChange={e => handleChange(e.target, index)}
                                     onKeyDown={e => handleKeyDown(e, index)}
                                     maxLength={1}
-                                    ref={el => (inputRefs.current[index] = el)}
+                                    // FIX: Changed ref callback to not return a value to fix TypeScript error.
+                                    ref={el => { inputRefs.current[index] = el; }}
                                     className="w-12 h-14 text-center text-2xl font-semibold border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary transition"
                                     disabled={isVerifying}
                                 />
@@ -916,81 +917,141 @@ const TripDetailsInputScreen: React.FC<NavigationProps> = ({ navigate }) => {
     );
 };
 
-const ScheduleRideScreen: React.FC<NavigationProps> = ({ navigate }) => (
+const ScheduleRideScreen: React.FC<NavigationProps> = ({ navigate }) => {
+    const [childSeat, setChildSeat] = useState(false);
+    const [wheelchairAccess, setWheelchairAccess] = useState(false);
+    const [luggagePhotos, setLuggagePhotos] = useState<File[]>([]);
+    const [isDragging, setIsDragging] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileSelect = (files: FileList | null) => {
+        if (!files) return;
+        const newFiles = Array.from(files);
+        setLuggagePhotos(prev => [...prev, ...newFiles]);
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            handleFileSelect(e.dataTransfer.files);
+            e.dataTransfer.clearData();
+        }
+    };
+    
+    const removePhoto = (indexToRemove: number) => {
+        setLuggagePhotos(prev => prev.filter((_, index) => index !== indexToRemove));
+    };
+
+    return (
     <ScreenContainer>
         <Header title="Schedule Ride" onBack={() => navigate('ServiceSelection')} />
         <div className="p-4 space-y-4">
             <Input id="date" label="Date" type="date" icon={<CalendarIcon className="w-5 h-5 text-gray-400" />} />
             <Input id="time" label="Time" type="time" icon={<CalendarIcon className="w-5 h-5 text-gray-400" />} />
-             <div className="pt-4">
-                <Button onClick={() => navigate('TripDetailsInput')}>Next</Button>
+            <Input id="pickup" label="Pickup Location" type="text" placeholder="Kotoka International Airport" defaultValue="Kotoka Int'l Airport, Terminal 3" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
+            <Input id="destination" label="Destination" type="text" placeholder="Enter your destination" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
+            <Input id="passengers" label="Passengers" type="number" placeholder="1" icon={<UsersIcon className="w-5 h-5 text-gray-400" />} />
+            <Input id="luggage" label="Luggage" type="number" placeholder="2" icon={<BriefcaseIcon className="w-5 h-5 text-gray-400" />} />
+            
+            <div>
+                <h3 className="block text-sm font-medium text-gray-700 mb-2">Other Requirements</h3>
+                <div className="space-y-2 bg-gray-50 p-3 rounded-md">
+                    <div className="flex items-center">
+                        <input id="child-seat" name="child-seat" type="checkbox" checked={childSeat} onChange={e => setChildSeat(e.target.checked)} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" />
+                        <label htmlFor="child-seat" className="ml-3 block text-sm text-gray-900">Child Seat</label>
+                    </div>
+                    <div className="flex items-center">
+                        <input id="wheelchair-access" name="wheelchair-access" type="checkbox" checked={wheelchairAccess} onChange={e => setWheelchairAccess(e.target.checked)} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" />
+                        <label htmlFor="wheelchair-access" className="ml-3 block text-sm text-gray-900">Wheelchair Access</label>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                 <label className="block text-sm font-medium text-gray-700">Upload Luggage Photo (Optional)</label>
+                 <div
+                     onDragOver={handleDragOver}
+                     onDragLeave={handleDragLeave}
+                     onDrop={handleDrop}
+                     onClick={() => fileInputRef.current?.click()}
+                     className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 ${isDragging ? 'border-primary bg-primary/10' : 'border-dashed'} rounded-md cursor-pointer transition-colors`}
+                 >
+                     <div className="space-y-1 text-center">
+                         <UploadCloudIcon className="mx-auto h-12 w-12 text-gray-400" />
+                         <div className="flex text-sm text-gray-600">
+                             <span className="relative bg-white rounded-md font-medium text-primary hover:text-primary-hover focus-within:outline-none">
+                                 <span>Upload files</span>
+                             </span>
+                             <p className="pl-1">or drag and drop</p>
+                         </div>
+                         <p className="text-xs text-gray-500">JPG, PNG, HEIC</p>
+                     </div>
+                     <input
+                         ref={fileInputRef}
+                         id="file-upload-scheduled"
+                         name="file-upload-scheduled"
+                         type="file"
+                         className="sr-only"
+                         multiple
+                         accept="image/jpeg,image/png,image/heic,.heic"
+                         onChange={(e) => handleFileSelect(e.target.files)}
+                     />
+                 </div>
+                 {luggagePhotos.length > 0 && (
+                     <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2">
+                         {luggagePhotos.map((file, index) => (
+                             <div key={index} className="relative group">
+                                 <img
+                                     src={URL.createObjectURL(file)}
+                                     alt={`luggage preview ${index}`}
+                                     className="h-24 w-full object-cover rounded-md"
+                                     onLoad={e => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
+                                 />
+                                 <button
+                                     onClick={() => removePhoto(index)}
+                                     className="absolute top-1 right-1 bg-red-600/75 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                     aria-label="Remove image"
+                                 >
+                                    &#x2715;
+                                 </button>
+                             </div>
+                         ))}
+                     </div>
+                 )}
+            </div>
+            
+            <div className="pt-2">
+                <Button onClick={() => navigate('CompatibleShuttlesList')}>Find A Ride</Button>
             </div>
         </div>
     </ScreenContainer>
-);
+    )
+};
 
 const CarRentalScreen: React.FC<NavigationProps> = ({ navigate }) => {
-    const [vehicleType, setVehicleType] = useState('Economy');
+    const [vehicleType, setVehicleType] = useState('Economy Class');
     const [pickupDateTime, setPickupDateTime] = useState('');
     const [returnDateTime, setReturnDateTime] = useState('');
-    const [duration, setDuration] = useState('0 hours');
-    const [price, setPrice] = useState(50);
     const [addons, setAddons] = useState({
         childSeat: false,
-        extraDriver: false,
-        gps: false,
-        insurance: true,
     });
 
     const vehicleTypes = {
-        Economy: { name: 'Economy', icon: <CarIcon/>, basePrice: 50 },
-        SUV: { name: 'SUV', icon: <CarIcon/>, basePrice: 80 },
-        Luxury: { name: 'Luxury', icon: <CarIcon/>, basePrice: 150 },
+        'Business Class': { name: 'Business Class', icon: <CarIcon/>, baseRate: 150 },
+        'Economy Class': { name: 'Economy Class', icon: <CarIcon/>, baseRate: 80 },
+        'Ordinary Class': { name: 'Ordinary Class', icon: <CarIcon/>, baseRate: 50 },
     };
-    
-    const addonPrices = {
-        childSeat: 10,
-        extraDriver: 25,
-        gps: 15,
-        insurance: 20,
-    };
-
-    useEffect(() => {
-        let total = vehicleTypes[vehicleType as keyof typeof vehicleTypes].basePrice;
-        let days = 1;
-
-        if (pickupDateTime && returnDateTime) {
-            const start = new Date(pickupDateTime).getTime();
-            const end = new Date(returnDateTime).getTime();
-            
-            if (start < end) {
-                const diffMs = end - start;
-                const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
-                days = Math.ceil(diffHours / 24) || 1;
-                const diffDays = Math.floor(diffHours / 24);
-                const remainingHours = diffHours % 24;
-
-                let durationStr = '';
-                if (diffDays > 0) durationStr += `${diffDays} day${diffDays > 1 ? 's' : ''}`;
-                if (remainingHours > 0) durationStr += `${durationStr ? ', ' : ''}${remainingHours} hour${remainingHours > 1 ? 's' : ''}`;
-                setDuration(durationStr || '0 hours');
-            } else {
-                setDuration('Invalid dates');
-            }
-        }
-        
-        total *= days;
-
-        Object.keys(addons).forEach(key => {
-            if (addons[key as keyof typeof addons]) {
-                const addonPrice = addonPrices[key as keyof typeof addonPrices];
-                // Daily charge for all addons except insurance
-                total += (key === 'insurance' ? addonPrice : addonPrice * days);
-            }
-        });
-        setPrice(total);
-
-    }, [pickupDateTime, returnDateTime, vehicleType, addons]);
     
     const toggleAddon = (addon: keyof typeof addons) => {
         setAddons(prev => ({...prev, [addon]: !prev[addon]}));
@@ -1031,32 +1092,27 @@ const CarRentalScreen: React.FC<NavigationProps> = ({ navigate }) => {
 
                 {/* Location Inputs */}
                 <div className="space-y-4">
-                    <Input id="pickup-location" label="Pick-up Location" type="text" placeholder="e.g., Airport Terminal 3" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
-                    <Input id="dropoff-location" label="Drop-off Location" type="text" placeholder="e.g., Same as pick-up" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
+                    <Input id="pickup-location" label="Pick-up Location (Optional)" type="text" placeholder="e.g., Airport Terminal 3" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
+                    <Input id="dropoff-location" label="Drop-off Location (Optional)" type="text" placeholder="e.g., Same as pick-up" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
                 </div>
                 
+                {/* Base Rate */}
+                <div>
+                    <h3 className="block text-sm font-medium text-gray-700 mb-2">Car Rental Base Rate per Day</h3>
+                    <div className="flex items-center bg-gray-50 p-3 rounded-md">
+                        <label htmlFor="base-rate" className="block text-sm text-gray-900 mr-2">Minimum Base Rate:</label>
+                        <span id="base-rate" className="font-semibold text-gray-800">
+                           ${vehicleTypes[vehicleType as keyof typeof vehicleTypes].baseRate.toFixed(2)}
+                        </span>
+                    </div>
+                </div>
+
                 {/* Optional Add-ons */}
                 <div>
                     <h3 className="block text-sm font-medium text-gray-700 mb-2">Optional Add-ons</h3>
                     <div className="space-y-2 bg-gray-50 p-3 rounded-md">
                         <CheckboxOption id="child-seat" label="Child Seat" icon={<BabyIcon/>} checked={addons.childSeat} onChange={() => toggleAddon('childSeat')} />
-                        <CheckboxOption id="extra-driver" label="Extra Driver" icon={<UsersIcon/>} checked={addons.extraDriver} onChange={() => toggleAddon('extraDriver')} />
-                        <CheckboxOption id="gps" label="GPS" icon={<MapPinIcon/>} checked={addons.gps} onChange={() => toggleAddon('gps')} />
-                        <CheckboxOption id="insurance" label="Insurance Package" icon={<ShieldIcon/>} checked={addons.insurance} onChange={() => toggleAddon('insurance')} />
                     </div>
-                </div>
-
-                {/* Summary */}
-                <div className="p-4 bg-primary/10 rounded-lg">
-                     <h3 className="font-bold text-lg mb-2 text-primary">Rental Summary</h3>
-                     <div className="flex justify-between items-center text-gray-700">
-                        <span>Rental Duration:</span>
-                        <span className="font-semibold">{duration}</span>
-                     </div>
-                     <div className="flex justify-between items-center mt-2 pt-2 border-t border-primary/20">
-                        <span className="text-xl font-semibold">Price Estimate:</span>
-                        <span className="text-2xl font-bold text-primary">${price.toFixed(2)}</span>
-                     </div>
                 </div>
                 
                 {/* Action Button */}
@@ -1231,29 +1287,34 @@ const TripCompletionReceiptScreen: React.FC<NavigationProps> = ({ navigate }) =>
     </ScreenContainer>
 );
 
-const TripHistoryScreen: React.FC<NavigationProps> = ({ navigate }) => (
-    <ScreenContainer>
-        <Header title="Trip History" onBack={() => navigate('ServiceSelection')} />
-        <div className="p-4 space-y-3">
-             {[
-                { status: 'Completed', color: 'green-500', icon: <CheckCircleIcon/> }, 
-                { status: 'Completed', color: 'green-500', icon: <CheckCircleIcon/> }, 
-                { status: 'Cancelled', color: 'red-500', icon: <XCircleIcon/> }
-            ].map((trip, i) => (
-                <div key={i} onClick={() => navigate('TripDetailsView')} className="bg-white p-4 rounded-lg shadow-md border flex justify-between items-center cursor-pointer hover:shadow-lg">
-                    <div>
-                        <p className="font-bold">Accra Mall</p>
-                        <p className="text-sm text-gray-500">Oct 26, 203</p>
+const TripHistoryScreen: React.FC<NavigationProps> = ({ navigate }) => {
+    // FIX: Typed icon as JSX.Element to allow cloning with props, avoiding a subtle type inference issue.
+    const trips: { status: string; color: string; icon: JSX.Element }[] = [
+        { status: 'Completed', color: 'green-500', icon: <CheckCircleIcon/> }, 
+        { status: 'Completed', color: 'green-500', icon: <CheckCircleIcon/> }, 
+        { status: 'Cancelled', color: 'red-500', icon: <XCircleIcon/> }
+    ];
+    
+    return (
+        <ScreenContainer>
+            <Header title="Trip History" onBack={() => navigate('ServiceSelection')} />
+            <div className="p-4 space-y-3">
+                {trips.map((trip, i) => (
+                    <div key={i} onClick={() => navigate('TripDetailsView')} className="bg-white p-4 rounded-lg shadow-md border flex justify-between items-center cursor-pointer hover:shadow-lg">
+                        <div>
+                            <p className="font-bold">Accra Mall</p>
+                            <p className="text-sm text-gray-500">Oct 26, 203</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="font-bold text-primary">$10.00</p>
+                            <p className={`text-sm font-semibold text-${trip.color} flex items-center justify-end`}>{React.cloneElement(trip.icon, { className: 'w-4 h-4 mr-1' })} {trip.status}</p>
+                        </div>
                     </div>
-                    <div className="text-right">
-                        <p className="font-bold text-primary">$10.00</p>
-                        <p className={`text-sm font-semibold text-${trip.color} flex items-center justify-end`}>{React.cloneElement(trip.icon, { className: 'w-4 h-4 mr-1' })} {trip.status}</p>
-                    </div>
-                </div>
-            ))}
-        </div>
-    </ScreenContainer>
-);
+                ))}
+            </div>
+        </ScreenContainer>
+    );
+};
 
 const TripDetailsViewScreen: React.FC<NavigationProps> = ({ navigate }) => (
     <ScreenContainer>
