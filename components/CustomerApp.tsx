@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
-import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon, ShieldIcon } from './Icons';
+import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon, ShieldIcon, GoogleIcon } from './Icons';
 
 interface CustomerAppProps extends NavigationProps {
   screen: Screen;
@@ -50,6 +50,8 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
           />;
       case 'LivePhotoLogin':
           return <LivePhotoLoginScreen navigate={navigate} />;
+      case 'PostLoginVerification':
+          return <PostLoginVerificationScreen navigate={navigate} logout={logout} />;
       case 'ServiceSelection':
           return <ServiceSelectionScreen navigate={navigate} logout={logout} />;
       case 'TripDetailsInput':
@@ -86,7 +88,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
   };
   
   const showNav = ![
-      'Login', 'Register', 'ForgotPassword', 'OTPVerification', 'LivePhotoLogin'
+      'Login', 'Register', 'ForgotPassword', 'OTPVerification', 'LivePhotoLogin', 'PostLoginVerification'
   ].includes(screen);
 
   return (
@@ -307,7 +309,7 @@ const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean, lo
                 
                 {isLogin ? (
                     <>
-                        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); navigate('ServiceSelection'); }}>
+                        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); navigate('PostLoginVerification'); }}>
                             <Input id="email-phone" label="Email or Phone Number" type="text" placeholder="customer@xtass.com" icon={<MailIcon className="w-5 h-5 text-gray-400" />} defaultValue="customer@xtass.com" />
                             <PasswordInput id="password-login" label="Password" value="password123" onChange={() => {}} />
                             <div className="pt-2">
@@ -319,10 +321,16 @@ const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean, lo
                             <span className="px-4 text-gray-500 text-sm">OR</span>
                             <div className="border-t border-gray-300 flex-grow"></div>
                         </div>
-                        <button onClick={() => navigate('LivePhotoLogin')} className="w-full flex items-center justify-center space-x-2 py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                            <CameraIcon className="w-5 h-5 text-primary"/>
-                            <span>Login with Live Photo Capture</span>
-                        </button>
+                        <div className="space-y-3">
+                            <button onClick={() => navigate('PostLoginVerification')} className="w-full flex items-center justify-center space-x-2 py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                <GoogleIcon className="w-5 h-5"/>
+                                <span>Login with Gmail</span>
+                            </button>
+                            <button onClick={() => navigate('LivePhotoLogin')} className="w-full flex items-center justify-center space-x-2 py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                                <CameraIcon className="w-5 h-5 text-primary"/>
+                                <span>Login with Live Photo Capture</span>
+                            </button>
+                        </div>
                     </>
                 ) : (
                     <div className="space-y-6">
@@ -676,7 +684,7 @@ const LivePhotoLoginScreen: React.FC<NavigationProps> = ({ navigate }) => {
         setCaptured(true);
         // Simulate login process
         setTimeout(() => {
-            navigate('ServiceSelection');
+            navigate('PostLoginVerification');
         }, 1500);
     };
 
@@ -690,7 +698,68 @@ const LivePhotoLoginScreen: React.FC<NavigationProps> = ({ navigate }) => {
                     {captured && (
                         <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center">
                             <CheckCircleIcon className="w-16 h-16 text-white mb-2" />
-                            <p className="text-white font-semibold">Verifying... Logging you in.</p>
+                            <p className="text-white font-semibold">Verifying...</p>
+                        </div>
+                    )}
+                </div>
+                <div className="mt-6 w-full max-w-xs">
+                     <Button onClick={handleCapture} disabled={captured}>
+                        {captured ? 'Verifying...' : 'Capture Photo & Login'}
+                    </Button>
+                </div>
+            </div>
+        </ScreenContainer>
+    );
+};
+
+const PostLoginVerificationScreen: React.FC<NavigationProps> = ({ navigate, logout }) => {
+    const videoRef = React.useRef<HTMLVideoElement>(null);
+    const [captured, setCaptured] = React.useState(false);
+
+    useEffect(() => {
+        let stream: MediaStream;
+        async function setupCamera() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                    }
+                } catch (err) {
+                    console.error("Error accessing camera: ", err);
+                    alert("Could not access the camera. Please ensure permissions are granted.");
+                    if(logout) logout();
+                }
+            }
+        }
+        setupCamera();
+
+        return () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, [logout]);
+
+    const handleCapture = () => {
+        setCaptured(true);
+        // Simulate verification process
+        setTimeout(() => {
+            navigate('ServiceSelection');
+        }, 1500);
+    };
+
+    return (
+        <ScreenContainer>
+            <Header title="Security Verification" onBack={logout} />
+            <div className="p-4 flex flex-col items-center">
+                <p className="text-gray-600 text-center mb-4">For your security, please capture a live photo to complete your login.</p>
+                <div className="w-full aspect-square bg-black rounded-lg overflow-hidden relative flex items-center justify-center">
+                    <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover"></video>
+                    {captured && (
+                        <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center">
+                            <CheckCircleIcon className="w-16 h-16 text-white mb-2" />
+                            <p className="text-white font-semibold">Verified! Redirecting...</p>
                         </div>
                     )}
                 </div>
@@ -703,6 +772,7 @@ const LivePhotoLoginScreen: React.FC<NavigationProps> = ({ navigate }) => {
         </ScreenContainer>
     );
 };
+
 
 const ServiceSelectionScreen: React.FC<NavigationProps> = ({ navigate, logout }) => (
     <ScreenContainer>
@@ -923,7 +993,7 @@ const TripHistoryScreen: React.FC<NavigationProps> = ({ navigate }) => (
                 <div key={i} onClick={() => navigate('TripDetailsView')} className="bg-white p-4 rounded-lg shadow-md border flex justify-between items-center cursor-pointer hover:shadow-lg">
                     <div>
                         <p className="font-bold">Accra Mall</p>
-                        <p className="text-sm text-gray-500">Oct 26, 2023</p>
+                        <p className="text-sm text-gray-500">Oct 26, 203</p>
                     </div>
                     <div className="text-right">
                         <p className="font-bold text-primary">$10.00</p>

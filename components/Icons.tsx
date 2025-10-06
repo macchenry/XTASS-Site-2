@@ -113,3 +113,9 @@ export const MailIcon: React.FC<IconProps> = ({ className }) => (
 export const CameraIcon: React.FC<IconProps> = ({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
 );
+
+export const GoogleIcon: React.FC<IconProps> = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.19,4.73C14.76,4.73 16.04,5.7 17.06,6.62L19.25,4.5C17.3,2.73 14.86,1.73 12.19,1.73C6.92,1.73 2.73,6.1 2.73,12C2.73,17.9 6.92,22.27 12.19,22.27C17.6,22.27 21.5,18.33 21.5,12.33C21.5,11.8 21.45,11.46 21.35,11.1Z"/>
+  </svg>
+);
