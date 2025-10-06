@@ -1,4 +1,3 @@
-
 export type Role = 'Customer' | 'Driver' | 'Admin';
 
 export type Screen =
@@ -8,6 +7,7 @@ export type Screen =
   | 'Register'
   | 'ForgotPassword'
   | 'OTPVerification'
+  | 'LivePhotoLogin'
   | 'ServiceSelection'
   | 'TripDetailsInput'
   | 'ScheduleRide'
@@ -46,4 +46,3 @@ export interface NavigationProps {
     navigate: (screen: Screen) => void;
     logout?: () => void;
 }
-

@@ -1,9 +1,7 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { Screen, NavigationProps } from '../types';
-import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast } from './shared/UI';
-// FIX: Removed StarIcon from imports as it is not exported from ./Icons.tsx and was not used.
-import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon } from './Icons';
+import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
+import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon } from './Icons';
 
 interface CustomerAppProps extends NavigationProps {
   screen: Screen;
@@ -43,6 +41,8 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
           />;
       case 'OTPVerification':
           return <OTPScreen navigate={navigate} onVerify={() => navigate('ServiceSelection')} onBack={() => navigate(otpOrigin)} />;
+      case 'LivePhotoLogin':
+          return <LivePhotoLoginScreen navigate={navigate} />;
       case 'ServiceSelection':
           return <ServiceSelectionScreen navigate={navigate} logout={logout} />;
       case 'TripDetailsInput':
@@ -79,7 +79,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
   };
   
   const showNav = ![
-      'Login', 'Register', 'ForgotPassword', 'OTPVerification'
+      'Login', 'Register', 'ForgotPassword', 'OTPVerification', 'LivePhotoLogin'
   ].includes(screen);
 
   return (
@@ -94,42 +94,255 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
 
 // --- Screen Components ---
 
+const PasswordInput: React.FC<{
+    id: string;
+    label: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    placeholder?: string;
+    showStrength?: boolean;
+    getStrengthColor?: () => string;
+    passwordStrength?: number;
+}> = ({ id, label, value, onChange, placeholder="••••••••", showStrength, getStrengthColor, passwordStrength }) => {
+    const [showPassword, setShowPassword] = useState(false);
+    return (
+        <div>
+            <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+            <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <LockIcon className="w-5 h-5 text-gray-400" />
+                </div>
+                <input
+                    id={id}
+                    type={showPassword ? "text" : "password"}
+                    className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                    placeholder={placeholder}
+                    value={value}
+                    onChange={onChange}
+                />
+                <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500"
+                >
+                    {showPassword ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                </button>
+            </div>
+            {showStrength && getStrengthColor && passwordStrength !== undefined && (
+                 <div className="mt-2">
+                    <div className="h-2 w-full bg-gray-200 rounded">
+                        <div className={`h-2 rounded transition-all duration-300 ${getStrengthColor()}`} style={{width: `${passwordStrength * 20}%`}}></div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">Password strength indicator</p>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const countryCodes = [
+    { code: '+233', name: 'GH' },
+    { code: '+234', name: 'NG' },
+    { code: '+1', name: 'US' },
+    { code: '+44', name: 'UK' },
+];
+
 const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean, logout?: () => void }> = ({ navigate, isLogin, logout }) => {
     const title = isLogin ? "Welcome Back" : "Create Account";
     const subTitle = isLogin ? "Sign in to your account" : "Let's get you started";
+    
+    // State for multi-step registration
+    const [step, setStep] = useState(1);
+    const [formData, setFormData] = useState({
+        countryCode: '+233',
+        phone: '241234567',
+        email: 'customer@xtass.com',
+        password: '',
+        confirmPassword: '',
+        agreedToTerms: false,
+    });
+    const [errors, setErrors] = useState({ email: '', passwordMatch: '' });
+    const [showTermsModal, setShowTermsModal] = useState(false);
+    const [passwordStrength, setPasswordStrength] = useState(0);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    const handleInputChange = (field: keyof typeof formData, value: string | boolean) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const validateEmail = (email: string) => {
+        if (email && !/\S+@\S+\.\S+/.test(email)) {
+            setErrors(prev => ({ ...prev, email: 'Invalid email format.' }));
+        } else {
+            setErrors(prev => ({ ...prev, email: '' }));
+        }
+    };
+
+    useEffect(() => {
+        if (formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword) {
+            setErrors(prev => ({ ...prev, passwordMatch: 'Passwords do not match.' }));
+        } else {
+            setErrors(prev => ({ ...prev, passwordMatch: '' }));
+        }
+    }, [formData.password, formData.confirmPassword]);
+    
+    const checkPasswordStrength = useCallback((pass: string) => {
+        let score = 0;
+        if (pass.length > 8) score++;
+        if (pass.match(/[a-z]/)) score++;
+        if (pass.match(/[A-Z]/)) score++;
+        if (pass.match(/[0-9]/)) score++;
+        if (pass.match(/[^a-zA-Z0-9]/)) score++;
+        setPasswordStrength(score);
+        handleInputChange('password', pass);
+    }, []);
+
+    const getStrengthColor = () => {
+        switch (passwordStrength) {
+            case 0: case 1: return 'bg-red-500';
+            case 2: return 'bg-orange-500';
+            case 3: return 'bg-yellow-500';
+            case 4: return 'bg-blue-500';
+            case 5: return 'bg-green-500';
+            default: return 'bg-gray-200';
+        }
+    };
+
+    const nextStep = () => setStep(s => Math.min(s + 1, 4));
+    const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
     return (
         <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-            {logout && (
-                <button onClick={logout} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Go back">
-                    <ChevronLeftIcon className="w-6 h-6" />
-                </button>
-            )}
+            <Modal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} title="Terms & Conditions">
+                <div className="space-y-4 text-sm text-gray-600">
+                    <p>Welcome to XTASS. These terms and conditions outline the rules and regulations for the use of our services.</p>
+                    <p>By accessing this app we assume you accept these terms and conditions. Do not continue to use XTASS if you do not agree to take all of the terms and conditions stated on this page.</p>
+                    <h4 className="font-semibold text-gray-800">1. Bookings</h4>
+                    <p>All bookings are subject to vehicle availability. We reserve the right to decline any booking at our discretion.</p>
+                    <h4 className="font-semibold text-gray-800">2. Payments</h4>
+                    <p>Payments must be made in full at the time of booking through our available payment gateways. All payments are processed securely.</p>
+                    <h4 className="font-semibold text-gray-800">3. Cancellations and Refunds</h4>
+                    <p>Cancellations made 24 hours before the scheduled trip are eligible for a full refund. Cancellations made less than 24 hours may incur a fee.</p>
+                </div>
+            </Modal>
+            
+            <button onClick={() => navigate('Login')} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Go back">
+                <ChevronLeftIcon className="w-6 h-6" />
+            </button>
             <div className="w-full max-w-sm text-center mb-8">
-                 <h1 className="text-4xl font-display font-bold text-primary">XTASS</h1>
+                 <button onClick={logout} className="text-4xl font-display font-bold text-primary">XTASS</button>
             </div>
             <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg">
                 <h2 className="text-2xl font-bold font-display text-gray-900 text-center">{title}</h2>
                 <p className="text-center text-gray-500 mb-6">{subTitle}</p>
-                <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); navigate(isLogin ? 'ServiceSelection' : 'OTPVerification'); }}>
-                    {!isLogin && <Input id="fullname" label="Full Name" type="text" placeholder="John Doe" icon={<UserIcon className="w-5 h-5 text-gray-400" />} defaultValue="Ama Serwaa" />}
-                    <Input id="phone" label="Phone Number" type="tel" placeholder="024 123 4567" icon={<PhoneIcon className="w-5 h-5 text-gray-400" />} defaultValue="024 123 4567" />
-                    <Input id="password" label="Password" type="password" placeholder="••••••••" icon={<LockIcon className="w-5 h-5 text-gray-400" />} defaultValue="password123" />
-                    {!isLogin && <Input id="confirm-password" label="Confirm Password" type="password" placeholder="••••••••" icon={<LockIcon className="w-5 h-5 text-gray-400" />} defaultValue="password123" />}
-                    <div className="pt-2">
-                        <Button type="submit">{isLogin ? "Login" : "Register"}</Button>
+                
+                {isLogin ? (
+                    <>
+                        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); navigate('ServiceSelection'); }}>
+                            <Input id="email-phone" label="Email or Phone Number" type="text" placeholder="customer@xtass.com" icon={<MailIcon className="w-5 h-5 text-gray-400" />} defaultValue="customer@xtass.com" />
+                            <PasswordInput id="password-login" label="Password" value="password123" onChange={() => {}} />
+                            <div className="pt-2">
+                                <Button type="submit">Login</Button>
+                            </div>
+                        </form>
+                        <div className="flex items-center justify-center my-4">
+                            <div className="border-t border-gray-300 flex-grow"></div>
+                            <span className="px-4 text-gray-500 text-sm">OR</span>
+                            <div className="border-t border-gray-300 flex-grow"></div>
+                        </div>
+                        <button onClick={() => navigate('LivePhotoLogin')} className="w-full flex items-center justify-center space-x-2 py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                            <CameraIcon className="w-5 h-5 text-primary"/>
+                            <span>Login with Live Photo Capture</span>
+                        </button>
+                    </>
+                ) : (
+                    <div className="space-y-6">
+                        <div className="flex justify-between items-center">
+                            {[1, 2, 3, 4].map(num => (
+                                <React.Fragment key={num}>
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold transition-colors duration-300 ${step >= num ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'}`}>
+                                        {num}
+                                    </div>
+                                    {num < 4 && <div className={`flex-1 h-1 mx-2 transition-colors duration-300 ${step > num ? 'bg-primary' : 'bg-gray-200'}`}></div>}
+                                </React.Fragment>
+                            ))}
+                        </div>
+                        
+                        {step === 1 && (
+                            <div>
+                                <h3 className="text-lg font-semibold mb-4 text-center">Enter your phone number</h3>
+                                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                                <div className="flex items-center">
+                                    <div className="relative">
+                                        <button type="button" onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center space-x-1 h-full bg-gray-100 border border-r-0 border-gray-300 rounded-l-md px-3">
+                                            <span>{formData.countryCode}</span>
+                                            <ChevronDownIcon className="w-4 h-4 text-gray-600"/>
+                                        </button>
+                                        {isDropdownOpen && (
+                                            <div className="absolute bottom-full mb-1 w-24 bg-white border rounded-md shadow-lg z-10">
+                                                {countryCodes.map(c => (
+                                                    <div key={c.code} onClick={() => { handleInputChange('countryCode', c.code); setIsDropdownOpen(false); }} className="px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer">{c.name} ({c.code})</div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <input id="phone" type="tel" value={formData.phone} onChange={e => handleInputChange('phone', e.target.value)} className="block w-full px-4 py-3 border border-gray-300 rounded-r-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" required />
+                                </div>
+                            </div>
+                        )}
+                        {step === 2 && (
+                            <div>
+                                <h3 className="text-lg font-semibold mb-4 text-center">Enter your email (optional)</h3>
+                                <Input id="email" label="Email" type="email" placeholder="you@example.com" value={formData.email} onChange={e => { handleInputChange('email', e.target.value); validateEmail(e.target.value); }} />
+                                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                            </div>
+                        )}
+                        {step === 3 && (
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-semibold mb-2 text-center">Create your password</h3>
+                                <PasswordInput id="password" label="Password" value={formData.password} onChange={e => checkPasswordStrength(e.target.value)} showStrength getStrengthColor={getStrengthColor} passwordStrength={passwordStrength}/>
+                                <PasswordInput id="confirmPassword" label="Confirm Password" value={formData.confirmPassword} onChange={e => handleInputChange('confirmPassword', e.target.value)} />
+                                {errors.passwordMatch && <p className="text-red-500 text-xs mt-1">{errors.passwordMatch}</p>}
+                            </div>
+                        )}
+                        {step === 4 && (
+                            <div>
+                                <h3 className="text-lg font-semibold mb-4 text-center">Agree to our terms</h3>
+                                <div className="flex items-start p-3 bg-gray-50 rounded-md">
+                                    <input type="checkbox" id="terms" checked={formData.agreedToTerms} onChange={e => handleInputChange('agreedToTerms', e.target.checked)} className="h-5 w-5 text-primary focus:ring-primary border-gray-300 rounded mt-0.5" />
+                                    <label htmlFor="terms" className="ml-3 text-sm text-gray-600">I agree to the <button type="button" onClick={() => setShowTermsModal(true)} className="font-medium text-primary hover:underline">Terms and Conditions</button>.</label>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex space-x-2 pt-2">
+                            {step > 1 && <Button type="button" variant="secondary" onClick={prevStep}>Back</Button>}
+                            {step < 4 && <Button type="button" onClick={nextStep} disabled={step === 3 && (!!errors.passwordMatch || !formData.password)}>Next</Button>}
+                            {step === 4 && <Button type="button" onClick={() => navigate('OTPVerification')} disabled={!formData.agreedToTerms} className="disabled:bg-gray-400 disabled:cursor-not-allowed hover:animate-pulse">Create Account</Button>}
+                        </div>
+                         {step === 2 && <button onClick={nextStep} className="w-full text-center text-primary font-medium mt-2 text-sm hover:underline">Skip for now</button>}
                     </div>
-                </form>
+                )}
+
                 <div className="text-sm text-center mt-4">
                     {isLogin ? (
                         <>
-                        <a href="#" onClick={(e) => {e.preventDefault(); navigate('ForgotPassword')}} className="font-medium text-primary hover:text-primary-hover">Forgot password?</a>
-                        <p className="mt-2 text-gray-600">Don't have an account? <a href="#" onClick={(e) => {e.preventDefault(); navigate('Register')}} className="font-medium text-primary hover:text-primary-hover">Sign up</a></p>
+                            <a href="#" onClick={(e) => { e.preventDefault(); navigate('ForgotPassword'); }} className="font-medium text-primary hover:text-primary-hover">Forgot password?</a>
+                            <p className="mt-2 text-gray-600">Don't have an account? <a href="#" onClick={(e) => { e.preventDefault(); navigate('Register'); }} className="font-medium text-primary hover:text-primary-hover">Register</a></p>
                         </>
                     ) : (
                         <p className="text-gray-600">Already have an account? <a href="#" onClick={(e) => {e.preventDefault(); navigate('Login')}} className="font-medium text-primary hover:text-primary-hover">Log in</a></p>
                     )}
                 </div>
+            </div>
+
+            <div className="fixed bottom-4 right-4 flex space-x-3">
+                 <a href="https://wa.me/233000000000" target="_blank" rel="noopener noreferrer" className="bg-green-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-green-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.894 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 4.315 1.731 6.086l-.219.324-1.123 4.144 4.224-1.105.327-.224z"/></svg>
+                </a>
+                <a href="tel:911" className="bg-red-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-red-700">
+                    <PhoneIcon className="w-7 h-7" />
+                </a>
             </div>
         </div>
     );
@@ -173,6 +386,67 @@ const OTPScreen: React.FC<{ navigate: (s: Screen) => void, onVerify: () => void,
         </div>
     </div>
 );
+
+const LivePhotoLoginScreen: React.FC<NavigationProps> = ({ navigate }) => {
+    const videoRef = React.useRef<HTMLVideoElement>(null);
+    const [captured, setCaptured] = React.useState(false);
+
+    useEffect(() => {
+        let stream: MediaStream;
+        async function setupCamera() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                    }
+                } catch (err) {
+                    console.error("Error accessing camera: ", err);
+                    alert("Could not access the camera. Please ensure permissions are granted.");
+                    navigate('Login');
+                }
+            }
+        }
+        setupCamera();
+
+        return () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, [navigate]);
+
+    const handleCapture = () => {
+        setCaptured(true);
+        // Simulate login process
+        setTimeout(() => {
+            navigate('ServiceSelection');
+        }, 1500);
+    };
+
+    return (
+        <ScreenContainer>
+            <Header title="Live Photo Login" onBack={() => navigate('Login')} />
+            <div className="p-4 flex flex-col items-center">
+                <p className="text-gray-600 text-center mb-4">Position your face within the frame and capture a photo to log in.</p>
+                <div className="w-full aspect-square bg-black rounded-lg overflow-hidden relative flex items-center justify-center">
+                    <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover"></video>
+                    {captured && (
+                        <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center">
+                            <CheckCircleIcon className="w-16 h-16 text-white mb-2" />
+                            <p className="text-white font-semibold">Verifying... Logging you in.</p>
+                        </div>
+                    )}
+                </div>
+                <div className="mt-6 w-full max-w-xs">
+                     <Button onClick={handleCapture} disabled={captured}>
+                        {captured ? 'Verifying...' : 'Capture Photo'}
+                    </Button>
+                </div>
+            </div>
+        </ScreenContainer>
+    );
+};
 
 const ServiceSelectionScreen: React.FC<NavigationProps> = ({ navigate, logout }) => (
     <ScreenContainer>
