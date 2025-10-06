@@ -70,6 +70,8 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
           return <ScheduleRideScreen navigate={navigate} />;
       case 'CarRental':
           return <CarRentalScreen navigate={navigate} />;
+      case 'AvailableCarsForRent':
+          return <AvailableCarsForRentScreen navigate={navigate} onBack={() => navigate('CarRental')} />;
       case 'CompatibleShuttlesList':
           const backTarget = previousScreen === 'ScheduleRide' ? 'ScheduleRide' : 'TripDetailsInput';
           return <CompatibleShuttlesListScreen navigate={navigate} onBack={() => navigate(backTarget)} />;
@@ -1127,12 +1129,36 @@ const CarRentalScreen: React.FC<NavigationProps> = ({ navigate }) => {
                 
                 {/* Action Button */}
                 <div className="pt-2">
-                    <Button onClick={() => alert('Rental Confirmed!')} className="hover:animate-pulse">Continue</Button>
+                    <Button onClick={() => navigate('AvailableCarsForRent')} className="hover:animate-pulse">Continue</Button>
                 </div>
             </div>
         </ScreenContainer>
     );
 };
+
+const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => void }> = ({ navigate, onBack }) => (
+    <ScreenContainer>
+        <Header title="Available Cars for Rent" onBack={onBack} />
+        <div className="p-4 space-y-3">
+            {[1, 2, 3].map(i => (
+                <div key={i} onClick={() => navigate('ShuttleDriverDetails')} className="bg-white p-4 rounded-lg shadow-md border border-gray-200 flex items-center space-x-4 cursor-pointer hover:shadow-lg transition-shadow">
+                    <img src={`https://picsum.photos/seed/car${i}/80/80`} alt="car" className="w-20 h-20 rounded-md object-cover" />
+                    <div className="flex-1">
+                        <h4 className="font-bold text-lg text-gray-800">Toyota Corolla</h4>
+                        <p className="text-gray-600">Economy Class</p>
+                        <p className="text-sm text-gray-500">Available now</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-lg font-bold text-primary">$50.00/day</p>
+                        <div className="flex items-center text-yellow-500">
+                           <UserIcon className="w-4 h-4 mr-1" /> 4.9
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </ScreenContainer>
+);
 
 const CompatibleShuttlesListScreen: React.FC<NavigationProps & { onBack: () => void }> = ({ navigate, onBack }) => (
     <ScreenContainer>
