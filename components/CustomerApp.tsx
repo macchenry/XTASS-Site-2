@@ -155,7 +155,7 @@ const countryCodes = [
 ];
 
 const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean, logout?: () => void }> = ({ navigate, isLogin, logout }) => {
-    const title = isLogin ? "Welcome Back" : "Create Account";
+    const title = isLogin ? "Welcome to XTASS" : "Create Account";
     const subTitle = isLogin ? "Sign in to your account" : "Let's get you started";
     
     // State for multi-step registration
@@ -301,10 +301,7 @@ const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean, lo
             <button onClick={() => navigate('Login')} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Go back">
                 <ChevronLeftIcon className="w-6 h-6" />
             </button>
-            <div className="w-full max-w-sm text-center mb-8">
-                 <button onClick={logout} className="text-4xl font-display font-bold text-primary">XTASS</button>
-            </div>
-            <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg">
+            <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg mt-12">
                 <h2 className="text-2xl font-bold font-display text-gray-900 text-center">{title}</h2>
                 <p className="text-center text-gray-500 mb-6">{subTitle}</p>
                 
