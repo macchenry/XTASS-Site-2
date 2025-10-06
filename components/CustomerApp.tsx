@@ -1127,7 +1127,7 @@ const CarRentalScreen: React.FC<NavigationProps> = ({ navigate }) => {
                 
                 {/* Action Button */}
                 <div className="pt-2">
-                    <Button onClick={() => alert('Rental Confirmed!')} className="hover:animate-pulse">Confirm Rental</Button>
+                    <Button onClick={() => alert('Rental Confirmed!')} className="hover:animate-pulse">Continue</Button>
                 </div>
             </div>
         </ScreenContainer>
