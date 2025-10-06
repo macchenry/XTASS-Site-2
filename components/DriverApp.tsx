@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, ScreenContainer } from './shared/UI';
-import { PhoneIcon, LockIcon, CarIcon, UploadCloudIcon, FileTextIcon, DollarSignIcon, CheckCircleIcon } from './Icons';
+import { PhoneIcon, LockIcon, CarIcon, UploadCloudIcon, FileTextIcon, DollarSignIcon, CheckCircleIcon, ChevronLeftIcon, XCircleIcon } from './Icons';
 
 interface DriverAppProps extends NavigationProps {
   screen: Screen;
@@ -12,7 +13,7 @@ export const DriverApp: React.FC<DriverAppProps> = ({ screen, navigate, logout }
   const renderScreen = () => {
     switch (screen) {
       case 'DriverLogin':
-        return <DriverAuthScreen navigate={navigate} isLogin />;
+        return <DriverAuthScreen navigate={navigate} isLogin logout={logout} />;
       case 'DriverPasswordRecovery':
           return <DriverForgotPasswordScreen navigate={navigate} />;
       case 'DriverRegistration':
@@ -32,7 +33,7 @@ export const DriverApp: React.FC<DriverAppProps> = ({ screen, navigate, logout }
       case 'EarningsDashboard':
         return <EarningsDashboardScreen navigate={navigate} />;
       default:
-        return <DriverAuthScreen navigate={navigate} isLogin />;
+        return <DriverAuthScreen navigate={navigate} isLogin logout={logout} />;
     }
   };
   return <div className="relative">{renderScreen()}</div>;
@@ -40,17 +41,22 @@ export const DriverApp: React.FC<DriverAppProps> = ({ screen, navigate, logout }
 
 // --- Screen Components ---
 
-const DriverAuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean }> = ({ navigate, isLogin }) => {
+const DriverAuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean, logout?: () => void }> = ({ navigate, isLogin, logout }) => {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+        <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+            {logout && (
+                <button onClick={logout} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Go back">
+                    <ChevronLeftIcon className="w-6 h-6" />
+                </button>
+            )}
             <div className="w-full max-w-sm text-center mb-8">
                  <h1 className="text-4xl font-display font-bold text-primary">XTASS Driver</h1>
             </div>
             <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg">
                 <h2 className="text-2xl font-bold font-display text-gray-900 text-center">{isLogin ? "Driver Login" : "Driver Registration"}</h2>
                 <form className="space-y-4 mt-6" onSubmit={(e) => { e.preventDefault(); navigate(isLogin ? 'DriverDashboard' : 'DocumentUpload'); }}>
-                    <Input id="phone" label="Phone Number" type="tel" placeholder="024 123 4567" icon={<PhoneIcon className="w-5 h-5 text-gray-400" />} />
-                    <Input id="password" label="Password" type="password" placeholder="••••••••" icon={<LockIcon className="w-5 h-5 text-gray-400" />} />
+                    <Input id="phone" label="Phone Number" type="tel" placeholder="024 123 4567" icon={<PhoneIcon className="w-5 h-5 text-gray-400" />} defaultValue="055 987 6543" />
+                    <Input id="password" label="Password" type="password" placeholder="••••••••" icon={<LockIcon className="w-5 h-5 text-gray-400" />} defaultValue="driverpass" />
                     <div className="pt-2">
                         <Button type="submit">{isLogin ? "Login" : "Continue"}</Button>
                     </div>
@@ -71,15 +77,17 @@ const DriverAuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boole
 };
 
 const DriverForgotPasswordScreen: React.FC<NavigationProps> = ({ navigate }) => (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+    <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+        <button onClick={() => navigate('DriverLogin')} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Back to Login">
+            <ChevronLeftIcon className="w-6 h-6" />
+        </button>
         <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg text-center">
             <h2 className="text-2xl font-bold font-display text-gray-900">Reset Password</h2>
             <p className="text-gray-500 mt-2 mb-6">Enter your phone number to receive a reset code.</p>
             <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); navigate('DriverLogin'); }}>
-                <Input id="phone-reset" label="Phone Number" type="tel" placeholder="024 123 4567" icon={<PhoneIcon className="w-5 h-5 text-gray-400" />} />
+                <Input id="phone-reset" label="Phone Number" type="tel" placeholder="024 123 4567" icon={<PhoneIcon className="w-5 h-5 text-gray-400" />} defaultValue="055 987 6543" />
                 <div className="pt-2"> <Button type="submit">Send Code</Button> </div>
             </form>
-             <button onClick={() => navigate('DriverLogin')} className="mt-4 text-sm font-medium text-primary hover:text-primary-hover">Back to Login</button>
         </div>
     </div>
 );
@@ -90,11 +98,11 @@ const DriverRegistrationScreen: React.FC<NavigationProps> = ({ navigate }) => (
         <Header title="Driver Registration" onBack={() => navigate('DriverLogin')} />
         <div className="p-4 space-y-4">
             <h3 className="font-semibold text-lg">Personal Details</h3>
-            <Input id="fullName" label="Full Name" type="text" placeholder="Kofi Mensah" />
-            <Input id="phone" label="Phone Number" type="tel" placeholder="024 123 4567" />
+            <Input id="fullName" label="Full Name" type="text" placeholder="Kofi Mensah" defaultValue="Kofi Mensah" />
+            <Input id="phone" label="Phone Number" type="tel" placeholder="024 123 4567" defaultValue="055 987 6543" />
             <h3 className="font-semibold text-lg mt-4">Vehicle Details</h3>
-            <Input id="vehicleModel" label="Vehicle Model" type="text" placeholder="Toyota Hiace" />
-            <Input id="licensePlate" label="License Plate" type="text" placeholder="GT-1234-20" />
+            <Input id="vehicleModel" label="Vehicle Model" type="text" placeholder="Toyota Hiace" defaultValue="Toyota Hiace" />
+            <Input id="licensePlate" label="License Plate" type="text" placeholder="GT-1234-20" defaultValue="GT-1234-20" />
             <div className="pt-4">
                 <Button onClick={() => navigate('DocumentUpload')}>Next: Upload Documents</Button>
             </div>
@@ -129,7 +137,10 @@ const DocumentUploadItem: React.FC<{title: string}> = ({ title }) => (
 );
 
 const ApplicationStatusScreen: React.FC<NavigationProps> = ({ navigate }) => (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4 text-center">
+    <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4 text-center">
+        <button onClick={() => navigate('DocumentUpload')} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Go back">
+            <ChevronLeftIcon className="w-6 h-6" />
+        </button>
         <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg">
             <div className="w-16 h-16 mx-auto border-4 border-t-accent border-gray-200 rounded-full animate-spin"></div>
             <h2 className="text-2xl font-bold font-display text-gray-900 mt-6">Application Submitted</h2>
@@ -143,7 +154,7 @@ const ApplicationStatusScreen: React.FC<NavigationProps> = ({ navigate }) => (
 
 const DriverDashboardScreen: React.FC<NavigationProps> = ({ navigate, logout }) => (
     <ScreenContainer>
-        <Header title="Dashboard" />
+        <Header title="Dashboard" onBack={logout} />
         <div className="p-4">
             <div className="bg-green-100 text-green-800 p-4 rounded-lg text-center">
                 <p className="font-semibold">Your status is: <span className="font-bold">Online</span></p>
@@ -171,7 +182,10 @@ const DriverDashboardScreen: React.FC<NavigationProps> = ({ navigate, logout }) 
 
 const TripRequestScreen: React.FC<NavigationProps> = ({ navigate }) => (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-        <div className="bg-white p-6 rounded-lg shadow-2xl w-full max-w-sm text-center animate-fade-in">
+        <div className="bg-white p-6 rounded-lg shadow-2xl w-full max-w-sm text-center animate-fade-in relative">
+            <button onClick={() => navigate('DriverDashboard')} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" aria-label="Close">
+                <XCircleIcon className="w-8 h-8" />
+            </button>
              <div className="w-24 h-24 mx-auto rounded-full border-8 border-primary animate-pulse flex items-center justify-center text-3xl font-bold text-primary">
                 45
             </div>

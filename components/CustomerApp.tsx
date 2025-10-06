@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast } from './shared/UI';
 // FIX: Removed StarIcon from imports as it is not exported from ./Icons.tsx and was not used.
-import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon } from './Icons';
+import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon } from './Icons';
 
 interface CustomerAppProps extends NavigationProps {
   screen: Screen;
@@ -19,7 +20,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
   const renderScreen = () => {
     switch (screen) {
       case 'Login':
-        return <AuthScreen navigate={navigate} isLogin />;
+        return <AuthScreen navigate={navigate} isLogin logout={logout} />;
       case 'Register':
         return <AuthScreen 
             navigate={(nextScreen: Screen) => {
@@ -29,6 +30,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
                 navigate(nextScreen);
             }} 
             isLogin={false} 
+            logout={logout}
         />;
       case 'ForgotPassword':
           return <ForgotPasswordScreen 
@@ -42,7 +44,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
       case 'OTPVerification':
           return <OTPScreen navigate={navigate} onVerify={() => navigate('ServiceSelection')} onBack={() => navigate(otpOrigin)} />;
       case 'ServiceSelection':
-          return <ServiceSelectionScreen navigate={navigate} />;
+          return <ServiceSelectionScreen navigate={navigate} logout={logout} />;
       case 'TripDetailsInput':
           return <TripDetailsInputScreen navigate={navigate} />;
       case 'ScheduleRide':
@@ -72,7 +74,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
       case 'EmergencyContacts':
           return <EmergencyContactsScreen navigate={navigate} />;
       default:
-        return <AuthScreen navigate={navigate} isLogin />;
+        return <AuthScreen navigate={navigate} isLogin logout={logout} />;
     }
   };
   
@@ -92,12 +94,17 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
 
 // --- Screen Components ---
 
-const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean }> = ({ navigate, isLogin }) => {
+const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean, logout?: () => void }> = ({ navigate, isLogin, logout }) => {
     const title = isLogin ? "Welcome Back" : "Create Account";
     const subTitle = isLogin ? "Sign in to your account" : "Let's get you started";
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+        <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+            {logout && (
+                <button onClick={logout} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Go back">
+                    <ChevronLeftIcon className="w-6 h-6" />
+                </button>
+            )}
             <div className="w-full max-w-sm text-center mb-8">
                  <h1 className="text-4xl font-display font-bold text-primary">XTASS</h1>
             </div>
@@ -105,10 +112,10 @@ const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean }> 
                 <h2 className="text-2xl font-bold font-display text-gray-900 text-center">{title}</h2>
                 <p className="text-center text-gray-500 mb-6">{subTitle}</p>
                 <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); navigate(isLogin ? 'ServiceSelection' : 'OTPVerification'); }}>
-                    {!isLogin && <Input id="fullname" label="Full Name" type="text" placeholder="John Doe" icon={<UserIcon className="w-5 h-5 text-gray-400" />} />}
-                    <Input id="phone" label="Phone Number" type="tel" placeholder="024 123 4567" icon={<PhoneIcon className="w-5 h-5 text-gray-400" />} />
-                    <Input id="password" label="Password" type="password" placeholder="••••••••" icon={<LockIcon className="w-5 h-5 text-gray-400" />} />
-                    {!isLogin && <Input id="confirm-password" label="Confirm Password" type="password" placeholder="••••••••" icon={<LockIcon className="w-5 h-5 text-gray-400" />} />}
+                    {!isLogin && <Input id="fullname" label="Full Name" type="text" placeholder="John Doe" icon={<UserIcon className="w-5 h-5 text-gray-400" />} defaultValue="Ama Serwaa" />}
+                    <Input id="phone" label="Phone Number" type="tel" placeholder="024 123 4567" icon={<PhoneIcon className="w-5 h-5 text-gray-400" />} defaultValue="024 123 4567" />
+                    <Input id="password" label="Password" type="password" placeholder="••••••••" icon={<LockIcon className="w-5 h-5 text-gray-400" />} defaultValue="password123" />
+                    {!isLogin && <Input id="confirm-password" label="Confirm Password" type="password" placeholder="••••••••" icon={<LockIcon className="w-5 h-5 text-gray-400" />} defaultValue="password123" />}
                     <div className="pt-2">
                         <Button type="submit">{isLogin ? "Login" : "Register"}</Button>
                     </div>
@@ -129,23 +136,28 @@ const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean }> 
 };
 
 const ForgotPasswordScreen: React.FC<NavigationProps> = ({ navigate }) => (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+    <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+        <button onClick={() => navigate('Login')} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Back to Login">
+            <ChevronLeftIcon className="w-6 h-6" />
+        </button>
         <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg text-center">
             <h2 className="text-2xl font-bold font-display text-gray-900">Forgot Password</h2>
             <p className="text-gray-500 mt-2 mb-6">Enter your phone number to receive a reset code.</p>
             <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); navigate('OTPVerification'); }}>
-                <Input id="phone-reset" label="Phone Number" type="tel" placeholder="024 123 4567" icon={<PhoneIcon className="w-5 h-5 text-gray-400" />} />
+                <Input id="phone-reset" label="Phone Number" type="tel" placeholder="024 123 4567" icon={<PhoneIcon className="w-5 h-5 text-gray-400" />} defaultValue="024 123 4567" />
                 <div className="pt-2">
                     <Button type="submit">Send Code</Button>
                 </div>
             </form>
-             <button onClick={() => navigate('Login')} className="mt-4 text-sm font-medium text-primary hover:text-primary-hover">Back to Login</button>
         </div>
     </div>
 );
 
 const OTPScreen: React.FC<{ navigate: (s: Screen) => void, onVerify: () => void, onBack: () => void }> = ({ onVerify, onBack }) => (
-     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+     <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+        <button onClick={onBack} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Go back">
+            <ChevronLeftIcon className="w-6 h-6" />
+        </button>
         <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg text-center">
             <h2 className="text-2xl font-bold font-display text-gray-900">OTP Verification</h2>
             <p className="text-gray-500 mt-2 mb-6">Enter the 6-digit code sent to your phone.</p>
@@ -155,17 +167,16 @@ const OTPScreen: React.FC<{ navigate: (s: Screen) => void, onVerify: () => void,
                 ))}
             </div>
             <Button onClick={onVerify}>Verify Account</Button>
-            <div className="mt-4 flex justify-between items-center text-sm">
-                <button onClick={onBack} className="font-medium text-primary hover:text-primary-hover">Back</button>
+            <div className="mt-4 flex justify-end items-center text-sm">
                 <p className="text-gray-600">Didn't receive code? <a href="#" className="font-medium text-primary hover:text-primary-hover">Resend</a></p>
             </div>
         </div>
     </div>
 );
 
-const ServiceSelectionScreen: React.FC<NavigationProps> = ({ navigate }) => (
+const ServiceSelectionScreen: React.FC<NavigationProps> = ({ navigate, logout }) => (
     <ScreenContainer>
-        <Header title="Book a Ride" />
+        <Header title="Book a Ride" onBack={logout} />
         <div className="p-4 space-y-4">
             <div onClick={() => navigate('TripDetailsInput')} className="bg-primary text-white p-6 rounded-lg shadow-lg cursor-pointer hover:bg-primary-hover transition-colors">
                 <h3 className="text-2xl font-display font-bold">Instant Ride</h3>
@@ -310,7 +321,7 @@ const PaymentProcessingScreen: React.FC<NavigationProps & { showToast: (msg: str
 
     return (
         <ScreenContainer>
-            <Header title="Processing Payment" />
+            <Header title="Processing Payment" onBack={() => navigate('PaymentSelection')} />
             <div className="flex flex-col items-center justify-center h-full p-4 mt-20">
                 <div className="w-16 h-16 border-4 border-t-primary border-gray-200 rounded-full animate-spin"></div>
                 <p className="mt-4 text-lg font-semibold text-gray-700">Securely processing your payment...</p>
@@ -372,7 +383,7 @@ const TripCompletionReceiptScreen: React.FC<NavigationProps> = ({ navigate }) =>
 
 const TripHistoryScreen: React.FC<NavigationProps> = ({ navigate }) => (
     <ScreenContainer>
-        <Header title="Trip History" />
+        <Header title="Trip History" onBack={() => navigate('ServiceSelection')} />
         <div className="p-4 space-y-3">
              {[
                 { status: 'Completed', color: 'green-500', icon: <CheckCircleIcon/> }, 
@@ -424,7 +435,7 @@ const TripDetailsViewScreen: React.FC<NavigationProps> = ({ navigate }) => (
 
 const AccountProfileScreen: React.FC<NavigationProps> = ({ navigate, logout }) => (
     <ScreenContainer>
-        <Header title="My Profile" />
+        <Header title="My Profile" onBack={() => navigate('ServiceSelection')} />
         <div className="p-4">
              <div className="flex flex-col items-center mb-6">
                 <img src="https://picsum.photos/seed/user/100/100" alt="profile" className="w-24 h-24 rounded-full mb-2" />

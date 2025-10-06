@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -15,7 +14,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ screen, navigate, logout
   const renderScreen = () => {
     switch (screen) {
       case 'AdminLogin':
-        return <AdminLoginScreen navigate={navigate} />;
+        return <AdminLoginScreen navigate={navigate} logout={logout} />;
       case 'AdminPasswordRecovery':
         return <AdminPasswordRecoveryScreen navigate={navigate} />;
       case 'AdminDashboard':
@@ -27,7 +26,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ screen, navigate, logout
       case 'SystemConfig':
         return <SystemConfigScreen />;
       default:
-        return <AdminLoginScreen navigate={navigate} />;
+        return <AdminLoginScreen navigate={navigate} logout={logout} />;
     }
   };
   
@@ -78,11 +77,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, screen, navigate, l
         <main className="flex-1 flex flex-col overflow-hidden">
             <header className="bg-white shadow-md p-4 flex justify-between items-center">
                 <div className="flex items-center">
-                    {screen !== 'AdminDashboard' && (
-                        <button onClick={() => navigate('AdminDashboard')} title="Back to Dashboard" className="text-primary p-1 rounded-full hover:bg-gray-100 mr-3">
-                            <ChevronLeftIcon className="w-6 h-6" />
-                        </button>
-                    )}
+                    <button
+                        onClick={() => screen === 'AdminDashboard' ? (logout && logout()) : navigate('AdminDashboard')}
+                        title={screen === 'AdminDashboard' ? "Logout" : "Back to Dashboard"}
+                        className="text-primary p-1 rounded-full hover:bg-gray-100 mr-3">
+                        <ChevronLeftIcon className="w-6 h-6" />
+                    </button>
                     <h2 className="text-2xl font-bold text-gray-800">{screen === 'LiveOperations' ? 'Live Operations' : screen.replace('Admin', '')}</h2>
                 </div>
                 <div>
@@ -110,13 +110,18 @@ const NavItem: React.FC<{ screenName: Screen, currentScreen: Screen, navigate: (
 
 // --- Screen Components ---
 
-const AdminLoginScreen: React.FC<NavigationProps> = ({ navigate }) => (
-  <div className="flex items-center justify-center min-h-screen bg-gray-200">
+const AdminLoginScreen: React.FC<NavigationProps> = ({ navigate, logout }) => (
+  <div className="relative flex items-center justify-center min-h-screen bg-gray-200">
+    {logout && (
+        <button onClick={logout} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Go back">
+            <ChevronLeftIcon className="w-6 h-6" />
+        </button>
+    )}
     <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
       <h2 className="text-3xl font-bold font-display text-primary text-center">Admin Panel</h2>
       <form className="mt-8 space-y-6" onSubmit={(e) => { e.preventDefault(); navigate('AdminDashboard'); }}>
-        <Input id="email" label="Email" type="email" placeholder="admin@xtass.com" icon={<UserIcon className="w-5 h-5 text-gray-400" />} />
-        <Input id="password" label="Password" type="password" placeholder="••••••••" icon={<LockIcon className="w-5 h-5 text-gray-400" />} />
+        <Input id="email" label="Email" type="email" placeholder="admin@xtass.com" icon={<UserIcon className="w-5 h-5 text-gray-400" />} defaultValue="admin@xtass.com" />
+        <Input id="password" label="Password" type="password" placeholder="••••••••" icon={<LockIcon className="w-5 h-5 text-gray-400" />} defaultValue="adminpass" />
         <div>
           <Button type="submit">Sign In</Button>
         </div>
@@ -125,7 +130,23 @@ const AdminLoginScreen: React.FC<NavigationProps> = ({ navigate }) => (
   </div>
 );
 
-const AdminPasswordRecoveryScreen: React.FC<NavigationProps> = ({ navigate }) => (<div>...</div>);
+const AdminPasswordRecoveryScreen: React.FC<NavigationProps> = ({ navigate }) => (
+  <div className="relative flex items-center justify-center min-h-screen bg-gray-200">
+    <button onClick={() => navigate('AdminLogin')} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Back to Login">
+        <ChevronLeftIcon className="w-6 h-6" />
+    </button>
+    <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
+      <h2 className="text-3xl font-bold font-display text-primary text-center">Password Recovery</h2>
+      <p className="text-gray-600 mt-4 mb-8 text-center">Enter your email to receive reset instructions.</p>
+      <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); navigate('AdminLogin'); }}>
+        <Input id="email-recovery" label="Email" type="email" placeholder="admin@xtass.com" icon={<UserIcon className="w-5 h-5 text-gray-400" />} defaultValue="admin@xtass.com" />
+        <div>
+          <Button type="submit">Send Instructions</Button>
+        </div>
+      </form>
+    </div>
+  </div>
+);
 
 const AdminDashboardScreen: React.FC = () => {
     const revenueData = [
