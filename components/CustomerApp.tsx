@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
-import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon, ShieldIcon, GoogleIcon } from './Icons';
+import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon, ShieldIcon, GoogleIcon, UploadCloudIcon } from './Icons';
 
 interface CustomerAppProps extends NavigationProps {
   screen: Screen;
@@ -782,7 +782,7 @@ const ServiceSelectionScreen: React.FC<NavigationProps> = ({ navigate, logout })
                 <h3 className="text-2xl font-display font-bold">Instant Ride</h3>
                 <p className="mt-1">Book the next available shuttle.</p>
             </div>
-            <div onClick={() => navigate('ScheduleRide')} className="bg-gray-200 text-gray-800 p-6 rounded-lg shadow-lg cursor-pointer hover:bg-gray-300 transition-colors">
+            <div onClick={() => navigate('ScheduleRide')} className="bg-accent text-white p-6 rounded-lg shadow-lg cursor-pointer hover:bg-yellow-400 transition-colors">
                  <h3 className="text-2xl font-display font-bold">Schedule Ride</h3>
                 <p className="mt-1">Plan your trip in advance.</p>
             </div>
@@ -790,20 +790,125 @@ const ServiceSelectionScreen: React.FC<NavigationProps> = ({ navigate, logout })
     </ScreenContainer>
 );
 
-const TripDetailsInputScreen: React.FC<NavigationProps> = ({ navigate }) => (
-     <ScreenContainer>
-        <Header title="Trip Details" onBack={() => navigate('ServiceSelection')} />
-        <div className="p-4 space-y-4">
-            <Input id="pickup" label="Pickup Location" type="text" placeholder="Kotoka International Airport" defaultValue="Kotoka Int'l Airport, Terminal 3" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
-            <Input id="destination" label="Destination" type="text" placeholder="Enter your destination" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
-            <Input id="passengers" label="Passengers" type="number" placeholder="1" icon={<UsersIcon className="w-5 h-5 text-gray-400" />} />
-            <Input id="luggage" label="Luggage" type="number" placeholder="2" icon={<BriefcaseIcon className="w-5 h-5 text-gray-400" />} />
-            <div className="pt-4">
-                <Button onClick={() => navigate('CompatibleShuttlesList')}>Find Shuttles</Button>
+const TripDetailsInputScreen: React.FC<NavigationProps> = ({ navigate }) => {
+    const [childSeat, setChildSeat] = useState(false);
+    const [wheelchairAccess, setWheelchairAccess] = useState(false);
+    const [luggagePhotos, setLuggagePhotos] = useState<File[]>([]);
+    const [isDragging, setIsDragging] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileSelect = (files: FileList | null) => {
+        if (!files) return;
+        const newFiles = Array.from(files);
+        setLuggagePhotos(prev => [...prev, ...newFiles]);
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            handleFileSelect(e.dataTransfer.files);
+            e.dataTransfer.clearData();
+        }
+    };
+    
+    const removePhoto = (indexToRemove: number) => {
+        setLuggagePhotos(prev => prev.filter((_, index) => index !== indexToRemove));
+    };
+    
+    return (
+        <ScreenContainer>
+            <Header title="Instant Ride" onBack={() => navigate('ServiceSelection')} />
+            <div className="p-4 space-y-4">
+                <Input id="pickup" label="Pickup Location" type="text" placeholder="Kotoka International Airport" defaultValue="Kotoka Int'l Airport, Terminal 3" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
+                <Input id="destination" label="Destination" type="text" placeholder="Enter your destination" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
+                <Input id="passengers" label="Passengers" type="number" placeholder="1" icon={<UsersIcon className="w-5 h-5 text-gray-400" />} />
+                <Input id="luggage" label="Luggage" type="number" placeholder="2" icon={<BriefcaseIcon className="w-5 h-5 text-gray-400" />} />
+                
+                <div>
+                    <h3 className="block text-sm font-medium text-gray-700 mb-2">Other Requirements</h3>
+                    <div className="space-y-2 bg-gray-50 p-3 rounded-md">
+                        <div className="flex items-center">
+                            <input id="child-seat" name="child-seat" type="checkbox" checked={childSeat} onChange={e => setChildSeat(e.target.checked)} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" />
+                            <label htmlFor="child-seat" className="ml-3 block text-sm text-gray-900">Child Seat</label>
+                        </div>
+                        <div className="flex items-center">
+                            <input id="wheelchair-access" name="wheelchair-access" type="checkbox" checked={wheelchairAccess} onChange={e => setWheelchairAccess(e.target.checked)} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" />
+                            <label htmlFor="wheelchair-access" className="ml-3 block text-sm text-gray-900">Wheelchair Access</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                     <label className="block text-sm font-medium text-gray-700">Upload Luggage Photo (Optional)</label>
+                     <div
+                         onDragOver={handleDragOver}
+                         onDragLeave={handleDragLeave}
+                         onDrop={handleDrop}
+                         onClick={() => fileInputRef.current?.click()}
+                         className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 ${isDragging ? 'border-primary bg-primary/10' : 'border-dashed'} rounded-md cursor-pointer transition-colors`}
+                     >
+                         <div className="space-y-1 text-center">
+                             <UploadCloudIcon className="mx-auto h-12 w-12 text-gray-400" />
+                             <div className="flex text-sm text-gray-600">
+                                 <span className="relative bg-white rounded-md font-medium text-primary hover:text-primary-hover focus-within:outline-none">
+                                     <span>Upload files</span>
+                                 </span>
+                                 <p className="pl-1">or drag and drop</p>
+                             </div>
+                             <p className="text-xs text-gray-500">JPG, PNG, HEIC</p>
+                         </div>
+                         <input
+                             ref={fileInputRef}
+                             id="file-upload"
+                             name="file-upload"
+                             type="file"
+                             className="sr-only"
+                             multiple
+                             accept="image/jpeg,image/png,image/heic,.heic"
+                             onChange={(e) => handleFileSelect(e.target.files)}
+                         />
+                     </div>
+                     {luggagePhotos.length > 0 && (
+                         <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2">
+                             {luggagePhotos.map((file, index) => (
+                                 <div key={index} className="relative group">
+                                     <img
+                                         src={URL.createObjectURL(file)}
+                                         alt={`luggage preview ${index}`}
+                                         className="h-24 w-full object-cover rounded-md"
+                                         onLoad={e => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
+                                     />
+                                     <button
+                                         onClick={() => removePhoto(index)}
+                                         className="absolute top-1 right-1 bg-red-600/75 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                         aria-label="Remove image"
+                                     >
+                                        &#x2715;
+                                     </button>
+                                 </div>
+                             ))}
+                         </div>
+                     )}
+                </div>
+                
+                <div className="pt-2">
+                    <Button onClick={() => navigate('CompatibleShuttlesList')}>Find A Ride</Button>
+                </div>
             </div>
-        </div>
-     </ScreenContainer>
-);
+        </ScreenContainer>
+    );
+};
 
 const ScheduleRideScreen: React.FC<NavigationProps> = ({ navigate }) => (
     <ScreenContainer>

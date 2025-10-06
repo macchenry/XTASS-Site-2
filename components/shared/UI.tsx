@@ -58,7 +58,6 @@ export const Header: React.FC<HeaderProps> = ({ title, onBack }) => {
                 ) : <div className="w-8"></div> }
                 <h1 className="text-xl font-display font-bold text-primary text-center">{title}</h1>
                 <div className="w-8">
-                  <span className="font-bold text-accent">XTASS</span>
                 </div>
             </div>
         </header>
