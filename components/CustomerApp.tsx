@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
-import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon } from './Icons';
+import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon, ShieldIcon } from './Icons';
 
 interface CustomerAppProps extends NavigationProps {
   screen: Screen;
@@ -10,6 +10,7 @@ interface CustomerAppProps extends NavigationProps {
 export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logout }) => {
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   const [otpOrigin, setOtpOrigin] = useState<Screen>('Register');
+  const [phoneForOTP, setPhoneForOTP] = useState({ phone: '241234567', code: '+233' });
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -37,13 +38,15 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
                       setOtpOrigin('ForgotPassword');
                   }
                   navigate(nextScreen);
-              }} 
+              }}
+              setPhoneForOTP={setPhoneForOTP}
           />;
       case 'OTPVerification':
           return <OTPScreen 
             navigate={navigate} 
             onBack={() => navigate(otpOrigin)} 
             showToast={(msg) => showToast(msg)}
+            phoneDetails={phoneForOTP}
           />;
       case 'LivePhotoLogin':
           return <LivePhotoLoginScreen navigate={navigate} />;
@@ -448,7 +451,7 @@ const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean, lo
     );
 };
 
-const ForgotPasswordScreen: React.FC<NavigationProps> = ({ navigate }) => {
+const ForgotPasswordScreen: React.FC<NavigationProps & { setPhoneForOTP: (details: {phone: string, code: string}) => void }> = ({ navigate, setPhoneForOTP }) => {
     const [countryCode, setCountryCode] = useState('+233');
     const [phone, setPhone] = useState('241234567');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -461,7 +464,7 @@ const ForgotPasswordScreen: React.FC<NavigationProps> = ({ navigate }) => {
             <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg text-center">
                 <h2 className="text-2xl font-bold font-display text-gray-900">Forgot Password</h2>
                 <p className="text-gray-500 mt-2 mb-6">Enter your phone number to receive a reset code.</p>
-                <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); navigate('OTPVerification'); }}>
+                <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setPhoneForOTP({ phone, code: countryCode }); navigate('OTPVerification'); }}>
                     <div>
                         <label htmlFor="phone-reset" className="block text-sm font-medium text-gray-700 mb-1 text-left">Phone Number</label>
                         <div className="flex items-center">
@@ -498,15 +501,27 @@ const ForgotPasswordScreen: React.FC<NavigationProps> = ({ navigate }) => {
     );
 };
 
-const OTPScreen: React.FC<{ navigate: (s: Screen) => void, onBack: () => void, showToast: (msg: string) => void }> = ({ navigate, onBack, showToast }) => {
+const OTPScreen: React.FC<{ navigate: (s: Screen) => void, onBack: () => void, showToast: (msg: string) => void, phoneDetails: { phone: string; code: string } }> = ({ navigate, onBack, showToast, phoneDetails }) => {
     const [otp, setOtp] = useState<string[]>(new Array(6).fill(""));
     const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
     const [isVerifying, setIsVerifying] = useState(false);
+    const [countdown, setCountdown] = useState(60);
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     useEffect(() => {
-        inputRefs.current[0]?.focus();
-    }, []);
+        if (countdown > 0) {
+            const timerId = setInterval(() => {
+                setCountdown(prev => prev - 1);
+            }, 1000);
+            return () => clearInterval(timerId);
+        }
+    }, [countdown]);
+
+    useEffect(() => {
+        if (!isVerifying) {
+            inputRefs.current[0]?.focus();
+        }
+    }, [isVerifying]);
 
     const handleChange = (element: HTMLInputElement, index: number) => {
         if (isNaN(Number(element.value))) return false;
@@ -515,7 +530,6 @@ const OTPScreen: React.FC<{ navigate: (s: Screen) => void, onBack: () => void, s
         newOtp[index] = element.value;
         setOtp(newOtp);
 
-        // Focus next input
         if (element.nextSibling && element.value) {
             (element.nextSibling as HTMLInputElement).focus();
         }
@@ -532,11 +546,9 @@ const OTPScreen: React.FC<{ navigate: (s: Screen) => void, onBack: () => void, s
         setIsVerifying(true);
         const code = otp.join("");
 
-        // Simulate API call
         setTimeout(() => {
-            // Simulate correct code as '123456'
-            if (code === "123456") {
-                setMessage({ text: '✅ Verification successful! Redirecting you to the login page…', type: 'success' });
+            if (code === "235777") {
+                setMessage({ text: 'Redirecting you to the login page…', type: 'success' });
                 setTimeout(() => {
                     navigate('Login');
                 }, 2500);
@@ -548,53 +560,87 @@ const OTPScreen: React.FC<{ navigate: (s: Screen) => void, onBack: () => void, s
     };
 
     const handleResend = () => {
+        if (countdown > 0) return;
         showToast("A new code has been sent.");
         setOtp(new Array(6).fill(""));
         setMessage(null);
+        setCountdown(60);
         inputRefs.current[0]?.focus();
     };
 
-    const messageColor = message?.type === 'success' ? 'text-green-600' : 'text-red-600';
+    const maskPhoneNumber = (code: string, phone: string) => {
+        const lastFour = phone.slice(-4);
+        return `${code} *** *** ${lastFour}`;
+    };
+
+    const isSuccess = message?.type === 'success';
+    const messageColor = message?.type === 'error' ? 'text-red-600' : '';
 
     return (
-        <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-            <button onClick={onBack} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Go back">
+        <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
+            <button onClick={onBack} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-100 z-10" aria-label="Go back">
                 <ChevronLeftIcon className="w-6 h-6" />
             </button>
-            <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg text-center">
-                <h2 className="text-2xl font-bold font-display text-gray-900">OTP Verification</h2>
-                <p className="text-gray-500 mt-2 mb-6">Enter the 6-digit code sent to your phone.</p>
-                <div className="flex justify-center space-x-2 mb-6">
-                    {otp.map((data, index) => (
-                        <input
-                            key={index}
-                            type="text"
-                            value={data}
-                            onChange={e => handleChange(e.target, index)}
-                            onKeyDown={e => handleKeyDown(e, index)}
-                            maxLength={1}
-                            ref={el => (inputRefs.current[index] = el)}
-                            className="w-12 h-12 text-center text-2xl font-semibold border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                            disabled={isVerifying}
-                        />
-                    ))}
-                </div>
-
-                {message && (
-                    <div className={`mt-4 text-sm font-semibold ${messageColor}`}>
-                        {message.text}
+             <div className="text-center mb-6">
+                <h1 className="text-3xl font-display font-bold text-primary">XTASS</h1>
+            </div>
+            <div className="w-full max-w-md bg-white p-6 sm:p-8 rounded-2xl shadow-xl text-center">
+                {isSuccess ? (
+                    <div className="animate-fade-in">
+                        <CheckCircleIcon className="w-24 h-24 text-green-500 mx-auto animate-pulse" />
+                        <h2 className="text-2xl font-bold font-display text-gray-900 mt-4">Verification Successful!</h2>
+                        <p className="text-gray-600 mt-2">{message.text}</p>
                     </div>
+                ) : (
+                    <>
+                        <ShieldIcon className="w-16 h-16 text-primary mx-auto mb-4" />
+                        <h2 className="text-2xl font-bold font-display text-gray-900">OTP Verification</h2>
+                        <p className="text-gray-500 mt-2 mb-4">Enter the code sent to</p>
+                        <div className="flex items-center justify-center font-semibold text-gray-800 bg-gray-100 py-2 px-4 rounded-lg mb-6">
+                           <span>{maskPhoneNumber(phoneDetails.code, phoneDetails.phone)}</span>
+                           <button onClick={onBack} className="ml-3 text-primary text-sm font-medium hover:underline">Edit</button>
+                        </div>
+                        
+                        <div className="flex justify-center space-x-2 mb-6">
+                            {otp.map((data, index) => (
+                                <input
+                                    key={index}
+                                    type="text"
+                                    value={data}
+                                    onChange={e => handleChange(e.target, index)}
+                                    onKeyDown={e => handleKeyDown(e, index)}
+                                    maxLength={1}
+                                    ref={el => (inputRefs.current[index] = el)}
+                                    className="w-12 h-14 text-center text-2xl font-semibold border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary transition"
+                                    disabled={isVerifying}
+                                />
+                            ))}
+                        </div>
+
+                        {message && (
+                            <div className={`mt-4 text-sm font-semibold ${messageColor}`}>
+                                {message.text}
+                            </div>
+                        )}
+                        
+                        <div className="mt-4">
+                            <Button onClick={handleVerify} disabled={isVerifying || otp.join("").length !== 6}>
+                                {isVerifying ? 'Verifying...' : 'Verify Account'}
+                            </Button>
+                        </div>
+                        
+                        <div className="mt-6 text-sm text-center text-gray-600">
+                           <p>Didn't receive the code?</p>
+                           <button 
+                                onClick={handleResend} 
+                                disabled={countdown > 0 || isVerifying}
+                                className="font-medium text-primary hover:text-primary-hover disabled:text-gray-400 disabled:cursor-not-allowed"
+                           >
+                                {countdown > 0 ? `Resend OTP in ${countdown}s` : 'Resend OTP'}
+                           </button>
+                        </div>
+                    </>
                 )}
-                
-                <div className="mt-4">
-                    <Button onClick={handleVerify} disabled={isVerifying || otp.join("").length !== 6}>
-                        {isVerifying ? 'Verifying...' : 'Verify Account'}
-                    </Button>
-                </div>
-                
-                <div className="mt-4 text-sm">
-                    <p className="text-gray-600">Didn't receive code? <button onClick={handleResend} disabled={isVerifying} className="font-medium text-primary hover:text-primary-hover disabled:text-gray-400 disabled:cursor-not-allowed">Resend Code</button></p>
-                </div>
             </div>
         </div>
     );
