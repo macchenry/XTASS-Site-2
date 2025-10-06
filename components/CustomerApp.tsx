@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
-import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon, ShieldIcon, GoogleIcon, UploadCloudIcon } from './Icons';
+import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon, ShieldIcon, GoogleIcon, UploadCloudIcon, CarIcon, BabyIcon } from './Icons';
 
 interface CustomerAppProps extends NavigationProps {
   screen: Screen;
@@ -58,6 +58,8 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
           return <TripDetailsInputScreen navigate={navigate} />;
       case 'ScheduleRide':
           return <ScheduleRideScreen navigate={navigate} />;
+      case 'CarRental':
+          return <CarRentalScreen navigate={navigate} />;
       case 'CompatibleShuttlesList':
           return <CompatibleShuttlesListScreen navigate={navigate} />;
       case 'ShuttleDriverDetails':
@@ -786,6 +788,10 @@ const ServiceSelectionScreen: React.FC<NavigationProps> = ({ navigate, logout })
                  <h3 className="text-2xl font-display font-bold">Schedule Ride</h3>
                 <p className="mt-1">Plan your trip in advance.</p>
             </div>
+            <div onClick={() => navigate('CarRental')} style={{backgroundColor: '#660032'}} className="text-white p-6 rounded-lg shadow-lg cursor-pointer hover:bg-opacity-90 transition-all">
+                <h3 className="text-2xl font-display font-bold">Car Rental</h3>
+                <p className="mt-1">Your personal ride for the day.</p>
+            </div>
         </div>
     </ScreenContainer>
 );
@@ -922,6 +928,145 @@ const ScheduleRideScreen: React.FC<NavigationProps> = ({ navigate }) => (
         </div>
     </ScreenContainer>
 );
+
+const CarRentalScreen: React.FC<NavigationProps> = ({ navigate }) => {
+    const [vehicleType, setVehicleType] = useState('Economy');
+    const [pickupDateTime, setPickupDateTime] = useState('');
+    const [returnDateTime, setReturnDateTime] = useState('');
+    const [duration, setDuration] = useState('0 hours');
+    const [price, setPrice] = useState(50);
+    const [addons, setAddons] = useState({
+        childSeat: false,
+        extraDriver: false,
+        gps: false,
+        insurance: true,
+    });
+
+    const vehicleTypes = {
+        Economy: { name: 'Economy', icon: <CarIcon/>, basePrice: 50 },
+        SUV: { name: 'SUV', icon: <CarIcon/>, basePrice: 80 },
+        Luxury: { name: 'Luxury', icon: <CarIcon/>, basePrice: 150 },
+    };
+    
+    const addonPrices = {
+        childSeat: 10,
+        extraDriver: 25,
+        gps: 15,
+        insurance: 20,
+    };
+
+    useEffect(() => {
+        let total = vehicleTypes[vehicleType as keyof typeof vehicleTypes].basePrice;
+        let days = 1;
+
+        if (pickupDateTime && returnDateTime) {
+            const start = new Date(pickupDateTime).getTime();
+            const end = new Date(returnDateTime).getTime();
+            
+            if (start < end) {
+                const diffMs = end - start;
+                const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
+                days = Math.ceil(diffHours / 24) || 1;
+                const diffDays = Math.floor(diffHours / 24);
+                const remainingHours = diffHours % 24;
+
+                let durationStr = '';
+                if (diffDays > 0) durationStr += `${diffDays} day${diffDays > 1 ? 's' : ''}`;
+                if (remainingHours > 0) durationStr += `${durationStr ? ', ' : ''}${remainingHours} hour${remainingHours > 1 ? 's' : ''}`;
+                setDuration(durationStr || '0 hours');
+            } else {
+                setDuration('Invalid dates');
+            }
+        }
+        
+        total *= days;
+
+        Object.keys(addons).forEach(key => {
+            if (addons[key as keyof typeof addons]) {
+                const addonPrice = addonPrices[key as keyof typeof addonPrices];
+                // Daily charge for all addons except insurance
+                total += (key === 'insurance' ? addonPrice : addonPrice * days);
+            }
+        });
+        setPrice(total);
+
+    }, [pickupDateTime, returnDateTime, vehicleType, addons]);
+    
+    const toggleAddon = (addon: keyof typeof addons) => {
+        setAddons(prev => ({...prev, [addon]: !prev[addon]}));
+    }
+
+    const CheckboxOption: React.FC<{ id: string, label: string, icon: React.ReactElement, checked: boolean, onChange: () => void }> = ({ id, label, icon, checked, onChange }) => (
+         <div className="flex items-center justify-between">
+            <div className="flex items-center">
+                {React.cloneElement(icon, { className: 'w-5 h-5 mr-3 text-gray-500' })}
+                <label htmlFor={id} className="block text-sm text-gray-900">{label}</label>
+            </div>
+            <input id={id} name={id} type="checkbox" checked={checked} onChange={onChange} className="h-5 w-5 text-primary focus:ring-primary border-gray-300 rounded" />
+        </div>
+    );
+
+    return (
+        <ScreenContainer>
+            <Header title="Car Rental" onBack={() => navigate('ServiceSelection')} />
+            <div className="p-4 space-y-6">
+                {/* Vehicle Type Selector */}
+                <div>
+                    <h3 className="block text-sm font-medium text-gray-700 mb-2">Select Vehicle Type</h3>
+                    <div className="grid grid-cols-3 gap-2">
+                        {Object.values(vehicleTypes).map(v => (
+                            <button key={v.name} onClick={() => setVehicleType(v.name)} className={`p-3 border rounded-lg text-center transition-colors ${vehicleType === v.name ? 'bg-primary text-white border-primary' : 'bg-gray-50 hover:bg-gray-100'}`}>
+                                {React.cloneElement(v.icon, {className: 'w-8 h-8 mx-auto mb-1'})}
+                                <span className="text-sm font-semibold">{v.name}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                
+                {/* Date & Time Selector */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input id="pickup-datetime" label="Pick-up Date & Time" type="datetime-local" onChange={e => setPickupDateTime(e.target.value)} />
+                    <Input id="return-datetime" label="Return Date & Time" type="datetime-local" onChange={e => setReturnDateTime(e.target.value)} />
+                </div>
+
+                {/* Location Inputs */}
+                <div className="space-y-4">
+                    <Input id="pickup-location" label="Pick-up Location" type="text" placeholder="e.g., Airport Terminal 3" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
+                    <Input id="dropoff-location" label="Drop-off Location" type="text" placeholder="e.g., Same as pick-up" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
+                </div>
+                
+                {/* Optional Add-ons */}
+                <div>
+                    <h3 className="block text-sm font-medium text-gray-700 mb-2">Optional Add-ons</h3>
+                    <div className="space-y-2 bg-gray-50 p-3 rounded-md">
+                        <CheckboxOption id="child-seat" label="Child Seat" icon={<BabyIcon/>} checked={addons.childSeat} onChange={() => toggleAddon('childSeat')} />
+                        <CheckboxOption id="extra-driver" label="Extra Driver" icon={<UsersIcon/>} checked={addons.extraDriver} onChange={() => toggleAddon('extraDriver')} />
+                        <CheckboxOption id="gps" label="GPS" icon={<MapPinIcon/>} checked={addons.gps} onChange={() => toggleAddon('gps')} />
+                        <CheckboxOption id="insurance" label="Insurance Package" icon={<ShieldIcon/>} checked={addons.insurance} onChange={() => toggleAddon('insurance')} />
+                    </div>
+                </div>
+
+                {/* Summary */}
+                <div className="p-4 bg-primary/10 rounded-lg">
+                     <h3 className="font-bold text-lg mb-2 text-primary">Rental Summary</h3>
+                     <div className="flex justify-between items-center text-gray-700">
+                        <span>Rental Duration:</span>
+                        <span className="font-semibold">{duration}</span>
+                     </div>
+                     <div className="flex justify-between items-center mt-2 pt-2 border-t border-primary/20">
+                        <span className="text-xl font-semibold">Price Estimate:</span>
+                        <span className="text-2xl font-bold text-primary">${price.toFixed(2)}</span>
+                     </div>
+                </div>
+                
+                {/* Action Button */}
+                <div className="pt-2">
+                    <Button onClick={() => alert('Rental Confirmed!')} className="hover:animate-pulse">Confirm Rental</Button>
+                </div>
+            </div>
+        </ScreenContainer>
+    );
+};
 
 const CompatibleShuttlesListScreen: React.FC<NavigationProps> = ({ navigate }) => (
     <ScreenContainer>

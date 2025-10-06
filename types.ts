@@ -12,6 +12,7 @@ export type Screen =
   | 'ServiceSelection'
   | 'TripDetailsInput'
   | 'ScheduleRide'
+  | 'CarRental'
   | 'CompatibleShuttlesList'
   | 'ShuttleDriverDetails'
   | 'BookingConfirmation'

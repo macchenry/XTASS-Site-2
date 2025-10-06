@@ -119,3 +119,7 @@ export const GoogleIcon: React.FC<IconProps> = ({ className }) => (
     <path d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.19,4.73C14.76,4.73 16.04,5.7 17.06,6.62L19.25,4.5C17.3,2.73 14.86,1.73 12.19,1.73C6.92,1.73 2.73,6.1 2.73,12C2.73,17.9 6.92,22.27 12.19,22.27C17.6,22.27 21.5,18.33 21.5,12.33C21.5,11.8 21.45,11.46 21.35,11.1Z"/>
   </svg>
 );
+
+export const BabyIcon: React.FC<IconProps> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9 12h.01"/><path d="M15 12h.01"/><path d="M10 16c.5.5 1.2.8 2 .8s1.5-.3 2-.8"/><path d="M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.8.6 5.4 1.7l-1.4 1.4"/><path d="M12 22a2 2 0 0 0 2-2v-1a2 2 0 0 0-4 0v1a2 2 0 0 0 2 2z"/></svg>
+);
