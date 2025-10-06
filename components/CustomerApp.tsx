@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
 import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon } from './Icons';
@@ -40,7 +40,11 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
               }} 
           />;
       case 'OTPVerification':
-          return <OTPScreen navigate={navigate} onVerify={() => navigate('ServiceSelection')} onBack={() => navigate(otpOrigin)} />;
+          return <OTPScreen 
+            navigate={navigate} 
+            onBack={() => navigate(otpOrigin)} 
+            showToast={(msg) => showToast(msg)}
+          />;
       case 'LivePhotoLogin':
           return <LivePhotoLoginScreen navigate={navigate} />;
       case 'ServiceSelection':
@@ -165,6 +169,12 @@ const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean, lo
     const [showTermsModal, setShowTermsModal] = useState(false);
     const [passwordStrength, setPasswordStrength] = useState(0);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    
+    // State for live photo capture
+    const [capturedImage, setCapturedImage] = useState<string | null>(null);
+    const [isVerifying, setIsVerifying] = useState(false);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
 
     const handleInputChange = (field: keyof typeof formData, value: string | boolean) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -208,8 +218,67 @@ const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean, lo
         }
     };
 
-    const nextStep = () => setStep(s => Math.min(s + 1, 4));
+    const nextStep = () => setStep(s => Math.min(s + 1, 5));
     const prevStep = () => setStep(s => Math.max(s - 1, 1));
+    
+    // Camera setup for registration step
+    useEffect(() => {
+        let stream: MediaStream | null = null;
+        
+        async function setupCamera() {
+            if (step === 4 && !capturedImage) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                    }
+                } catch (err) {
+                    console.error("Error accessing camera: ", err);
+                    alert("Camera access is required for this step. Please grant permission and try again.");
+                    setStep(3); // Go back to previous step
+                }
+            }
+        }
+
+        setupCamera();
+
+        return () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, [step, capturedImage]);
+
+    const handleCapture = () => {
+        if (videoRef.current && canvasRef.current) {
+            const video = videoRef.current;
+            const canvas = canvasRef.current;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            if (context) {
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const dataUrl = canvas.toDataURL('image/png');
+                setCapturedImage(dataUrl);
+                setIsVerifying(true);
+                // Simulate verification
+                setTimeout(() => {
+                    setIsVerifying(false);
+                }, 1500);
+
+                // Stop camera stream
+                if (video.srcObject) {
+                    (video.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+                }
+            }
+        }
+    };
+    
+    const retakePhoto = () => {
+        setCapturedImage(null);
+        setIsVerifying(false);
+    };
+
 
     return (
         <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
@@ -258,12 +327,12 @@ const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean, lo
                 ) : (
                     <div className="space-y-6">
                         <div className="flex justify-between items-center">
-                            {[1, 2, 3, 4].map(num => (
+                            {[1, 2, 3, 4, 5].map(num => (
                                 <React.Fragment key={num}>
                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold transition-colors duration-300 ${step >= num ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'}`}>
                                         {num}
                                     </div>
-                                    {num < 4 && <div className={`flex-1 h-1 mx-2 transition-colors duration-300 ${step > num ? 'bg-primary' : 'bg-gray-200'}`}></div>}
+                                    {num < 5 && <div className={`flex-1 h-1 mx-2 transition-colors duration-300 ${step > num ? 'bg-primary' : 'bg-gray-200'}`}></div>}
                                 </React.Fragment>
                             ))}
                         </div>
@@ -307,6 +376,37 @@ const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean, lo
                         )}
                         {step === 4 && (
                             <div>
+                                <h3 className="text-lg font-semibold mb-4 text-center">Live Photo Verification</h3>
+                                <p className="text-center text-sm text-gray-500 mb-4">Position your face in the frame.</p>
+                                <div className="w-full aspect-square bg-black rounded-lg overflow-hidden relative flex items-center justify-center">
+                                    <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-cover ${capturedImage ? 'hidden' : ''}`}></video>
+                                    <canvas ref={canvasRef} className="hidden"></canvas>
+                                    {capturedImage && <img src={capturedImage} alt="Captured" className="w-full h-full object-cover" />}
+                                    
+                                    {isVerifying && (
+                                        <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center">
+                                            <div className="w-12 h-12 border-4 border-t-white border-gray-500 rounded-full animate-spin"></div>
+                                            <p className="text-white font-semibold mt-2">Verifying...</p>
+                                        </div>
+                                    )}
+                                    {!isVerifying && capturedImage && (
+                                         <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center">
+                                            <CheckCircleIcon className="w-16 h-16 text-white mb-2" />
+                                            <p className="text-white font-semibold">Photo Verified!</p>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="mt-4">
+                                    {!capturedImage ? (
+                                        <Button type="button" onClick={handleCapture}>Capture Photo</Button>
+                                    ) : (
+                                        <Button type="button" variant="secondary" onClick={retakePhoto}>Retake Photo</Button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                        {step === 5 && (
+                            <div>
                                 <h3 className="text-lg font-semibold mb-4 text-center">Agree to our terms</h3>
                                 <div className="flex items-start p-3 bg-gray-50 rounded-md">
                                     <input type="checkbox" id="terms" checked={formData.agreedToTerms} onChange={e => handleInputChange('agreedToTerms', e.target.checked)} className="h-5 w-5 text-primary focus:ring-primary border-gray-300 rounded mt-0.5" />
@@ -317,8 +417,8 @@ const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean, lo
 
                         <div className="flex space-x-2 pt-2">
                             {step > 1 && <Button type="button" variant="secondary" onClick={prevStep}>Back</Button>}
-                            {step < 4 && <Button type="button" onClick={nextStep} disabled={step === 3 && (!!errors.passwordMatch || !formData.password)}>Next</Button>}
-                            {step === 4 && <Button type="button" onClick={() => navigate('OTPVerification')} disabled={!formData.agreedToTerms} className="disabled:bg-gray-400 disabled:cursor-not-allowed hover:animate-pulse">Create Account</Button>}
+                            {step < 5 && <Button type="button" onClick={nextStep} disabled={(step === 3 && (!!errors.passwordMatch || !formData.password)) || (step === 4 && (!capturedImage || isVerifying))}>Next</Button>}
+                            {step === 5 && <Button type="button" onClick={() => navigate('OTPVerification')} disabled={!formData.agreedToTerms} className="disabled:bg-gray-400 disabled:cursor-not-allowed hover:animate-pulse">Create Account</Button>}
                         </div>
                          {step === 2 && <button onClick={nextStep} className="w-full text-center text-primary font-medium mt-2 text-sm hover:underline">Skip for now</button>}
                     </div>
@@ -348,44 +448,157 @@ const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean, lo
     );
 };
 
-const ForgotPasswordScreen: React.FC<NavigationProps> = ({ navigate }) => (
-    <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-        <button onClick={() => navigate('Login')} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Back to Login">
-            <ChevronLeftIcon className="w-6 h-6" />
-        </button>
-        <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg text-center">
-            <h2 className="text-2xl font-bold font-display text-gray-900">Forgot Password</h2>
-            <p className="text-gray-500 mt-2 mb-6">Enter your phone number to receive a reset code.</p>
-            <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); navigate('OTPVerification'); }}>
-                <Input id="phone-reset" label="Phone Number" type="tel" placeholder="024 123 4567" icon={<PhoneIcon className="w-5 h-5 text-gray-400" />} defaultValue="024 123 4567" />
-                <div className="pt-2">
-                    <Button type="submit">Send Code</Button>
-                </div>
-            </form>
-        </div>
-    </div>
-);
+const ForgotPasswordScreen: React.FC<NavigationProps> = ({ navigate }) => {
+    const [countryCode, setCountryCode] = useState('+233');
+    const [phone, setPhone] = useState('241234567');
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-const OTPScreen: React.FC<{ navigate: (s: Screen) => void, onVerify: () => void, onBack: () => void }> = ({ onVerify, onBack }) => (
-     <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-        <button onClick={onBack} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Go back">
-            <ChevronLeftIcon className="w-6 h-6" />
-        </button>
-        <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg text-center">
-            <h2 className="text-2xl font-bold font-display text-gray-900">OTP Verification</h2>
-            <p className="text-gray-500 mt-2 mb-6">Enter the 6-digit code sent to your phone.</p>
-            <div className="flex justify-center space-x-2 mb-6">
-                {[...Array(6)].map((_, i) => (
-                    <input key={i} type="text" maxLength={1} className="w-12 h-12 text-center text-2xl font-semibold border border-gray-300 rounded-md focus:ring-primary focus:border-primary" />
-                ))}
-            </div>
-            <Button onClick={onVerify}>Verify Account</Button>
-            <div className="mt-4 flex justify-end items-center text-sm">
-                <p className="text-gray-600">Didn't receive code? <a href="#" className="font-medium text-primary hover:text-primary-hover">Resend</a></p>
+    return (
+        <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+            <button onClick={() => navigate('Login')} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Back to Login">
+                <ChevronLeftIcon className="w-6 h-6" />
+            </button>
+            <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg text-center">
+                <h2 className="text-2xl font-bold font-display text-gray-900">Forgot Password</h2>
+                <p className="text-gray-500 mt-2 mb-6">Enter your phone number to receive a reset code.</p>
+                <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); navigate('OTPVerification'); }}>
+                    <div>
+                        <label htmlFor="phone-reset" className="block text-sm font-medium text-gray-700 mb-1 text-left">Phone Number</label>
+                        <div className="flex items-center">
+                            <div className="relative">
+                                <button type="button" onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="flex items-center space-x-1 h-full bg-gray-100 border border-r-0 border-gray-300 rounded-l-md px-3">
+                                    <span>{countryCode}</span>
+                                    <ChevronDownIcon className="w-4 h-4 text-gray-600"/>
+                                </button>
+                                {isDropdownOpen && (
+                                    <div className="absolute bottom-full mb-1 w-24 bg-white border rounded-md shadow-lg z-10">
+                                        {countryCodes.map(c => (
+                                            <div key={c.code} onClick={() => { setCountryCode(c.code); setIsDropdownOpen(false); }} className="px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer">{c.name} ({c.code})</div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <input
+                                id="phone-reset"
+                                type="tel"
+                                value={phone}
+                                onChange={e => setPhone(e.target.value)}
+                                className="block w-full px-4 py-3 border border-gray-300 rounded-r-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                                placeholder="24 123 4567"
+                                required
+                            />
+                        </div>
+                    </div>
+                    <div className="pt-2">
+                        <Button type="submit">Send Code</Button>
+                    </div>
+                </form>
             </div>
         </div>
-    </div>
-);
+    );
+};
+
+const OTPScreen: React.FC<{ navigate: (s: Screen) => void, onBack: () => void, showToast: (msg: string) => void }> = ({ navigate, onBack, showToast }) => {
+    const [otp, setOtp] = useState<string[]>(new Array(6).fill(""));
+    const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+    const [isVerifying, setIsVerifying] = useState(false);
+    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+    useEffect(() => {
+        inputRefs.current[0]?.focus();
+    }, []);
+
+    const handleChange = (element: HTMLInputElement, index: number) => {
+        if (isNaN(Number(element.value))) return false;
+
+        const newOtp = [...otp];
+        newOtp[index] = element.value;
+        setOtp(newOtp);
+
+        // Focus next input
+        if (element.nextSibling && element.value) {
+            (element.nextSibling as HTMLInputElement).focus();
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+        if (e.key === "Backspace" && !otp[index] && index > 0) {
+            inputRefs.current[index - 1]?.focus();
+        }
+    };
+    
+    const handleVerify = () => {
+        setMessage(null);
+        setIsVerifying(true);
+        const code = otp.join("");
+
+        // Simulate API call
+        setTimeout(() => {
+            // Simulate correct code as '123456'
+            if (code === "123456") {
+                setMessage({ text: '✅ Verification successful! Redirecting you to the login page…', type: 'success' });
+                setTimeout(() => {
+                    navigate('Login');
+                }, 2500);
+            } else {
+                setMessage({ text: '❌ The code you entered is incorrect or has expired. Please request a new one.', type: 'error' });
+                setIsVerifying(false);
+            }
+        }, 1500);
+    };
+
+    const handleResend = () => {
+        showToast("A new code has been sent.");
+        setOtp(new Array(6).fill(""));
+        setMessage(null);
+        inputRefs.current[0]?.focus();
+    };
+
+    const messageColor = message?.type === 'success' ? 'text-green-600' : 'text-red-600';
+
+    return (
+        <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+            <button onClick={onBack} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Go back">
+                <ChevronLeftIcon className="w-6 h-6" />
+            </button>
+            <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg text-center">
+                <h2 className="text-2xl font-bold font-display text-gray-900">OTP Verification</h2>
+                <p className="text-gray-500 mt-2 mb-6">Enter the 6-digit code sent to your phone.</p>
+                <div className="flex justify-center space-x-2 mb-6">
+                    {otp.map((data, index) => (
+                        <input
+                            key={index}
+                            type="text"
+                            value={data}
+                            onChange={e => handleChange(e.target, index)}
+                            onKeyDown={e => handleKeyDown(e, index)}
+                            maxLength={1}
+                            ref={el => (inputRefs.current[index] = el)}
+                            className="w-12 h-12 text-center text-2xl font-semibold border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                            disabled={isVerifying}
+                        />
+                    ))}
+                </div>
+
+                {message && (
+                    <div className={`mt-4 text-sm font-semibold ${messageColor}`}>
+                        {message.text}
+                    </div>
+                )}
+                
+                <div className="mt-4">
+                    <Button onClick={handleVerify} disabled={isVerifying || otp.join("").length !== 6}>
+                        {isVerifying ? 'Verifying...' : 'Verify Account'}
+                    </Button>
+                </div>
+                
+                <div className="mt-4 text-sm">
+                    <p className="text-gray-600">Didn't receive code? <button onClick={handleResend} disabled={isVerifying} className="font-medium text-primary hover:text-primary-hover disabled:text-gray-400 disabled:cursor-not-allowed">Resend Code</button></p>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const LivePhotoLoginScreen: React.FC<NavigationProps> = ({ navigate }) => {
     const videoRef = React.useRef<HTMLVideoElement>(null);
