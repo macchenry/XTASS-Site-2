@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
@@ -7,10 +8,19 @@ interface CustomerAppProps extends NavigationProps {
   screen: Screen;
 }
 
+function usePrevious(value: Screen): Screen | undefined {
+    const ref = useRef<Screen>();
+    useEffect(() => {
+        ref.current = value;
+    }, [value]);
+    return ref.current;
+}
+
 export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logout }) => {
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   const [otpOrigin, setOtpOrigin] = useState<Screen>('Register');
   const [phoneForOTP, setPhoneForOTP] = useState({ phone: '241234567', code: '+233' });
+  const previousScreen = usePrevious(screen);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -61,7 +71,8 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
       case 'CarRental':
           return <CarRentalScreen navigate={navigate} />;
       case 'CompatibleShuttlesList':
-          return <CompatibleShuttlesListScreen navigate={navigate} />;
+          const backTarget = previousScreen === 'ScheduleRide' ? 'ScheduleRide' : 'TripDetailsInput';
+          return <CompatibleShuttlesListScreen navigate={navigate} onBack={() => navigate(backTarget)} />;
       case 'ShuttleDriverDetails':
           return <ShuttleDriverDetailsScreen navigate={navigate} />;
       case 'BookingConfirmation':
@@ -730,7 +741,6 @@ const PostLoginVerificationScreen: React.FC<NavigationProps> = ({ navigate, logo
                     }
                 } catch (err) {
                     console.error("Error accessing camera: ", err);
-                    alert("Could not access the camera. Please ensure permissions are granted.");
                     if(logout) logout();
                 }
             }
@@ -785,7 +795,7 @@ const ServiceSelectionScreen: React.FC<NavigationProps> = ({ navigate, logout })
                 <h3 className="text-2xl font-display font-bold">Instant Ride</h3>
                 <p className="mt-1">Book the next available shuttle.</p>
             </div>
-            <div onClick={() => navigate('ScheduleRide')} className="bg-accent text-white p-6 rounded-lg shadow-lg cursor-pointer hover:bg-yellow-400 transition-colors">
+            <div onClick={() => navigate('ScheduleRide')} className="bg-accent text-[#660032] p-6 rounded-lg shadow-lg cursor-pointer hover:bg-yellow-400 transition-colors">
                  <h3 className="text-2xl font-display font-bold">Schedule Ride</h3>
                 <p className="mt-1">Plan your trip in advance.</p>
             </div>
@@ -1124,9 +1134,9 @@ const CarRentalScreen: React.FC<NavigationProps> = ({ navigate }) => {
     );
 };
 
-const CompatibleShuttlesListScreen: React.FC<NavigationProps> = ({ navigate }) => (
+const CompatibleShuttlesListScreen: React.FC<NavigationProps & { onBack: () => void }> = ({ navigate, onBack }) => (
     <ScreenContainer>
-        <Header title="Available Shuttles" onBack={() => navigate('TripDetailsInput')} />
+        <Header title="Available Shuttles" onBack={onBack} />
         <div className="p-4 space-y-3">
             {[1, 2, 3].map(i => (
                 <div key={i} onClick={() => navigate('ShuttleDriverDetails')} className="bg-white p-4 rounded-lg shadow-md border border-gray-200 flex items-center space-x-4 cursor-pointer hover:shadow-lg transition-shadow">
@@ -1288,8 +1298,8 @@ const TripCompletionReceiptScreen: React.FC<NavigationProps> = ({ navigate }) =>
 );
 
 const TripHistoryScreen: React.FC<NavigationProps> = ({ navigate }) => {
-    // FIX: Typed icon as JSX.Element to allow cloning with props, avoiding a subtle type inference issue.
-    const trips: { status: string; color: string; icon: JSX.Element }[] = [
+    // FIX: Typed icon as React.ReactElement to allow cloning with props and resolve the JSX namespace error.
+    const trips: { status: string; color: string; icon: React.ReactElement }[] = [
         { status: 'Completed', color: 'green-500', icon: <CheckCircleIcon/> }, 
         { status: 'Completed', color: 'green-500', icon: <CheckCircleIcon/> }, 
         { status: 'Cancelled', color: 'red-500', icon: <XCircleIcon/> }
