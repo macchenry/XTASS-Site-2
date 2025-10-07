@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
-import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon, ShieldIcon, GoogleIcon, UploadCloudIcon, CarIcon, BabyIcon } from './Icons';
+import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon, ShieldIcon, GoogleIcon, UploadCloudIcon, CarIcon, BabyIcon, BusIcon } from './Icons';
 
 interface CustomerAppProps extends NavigationProps {
   screen: Screen;
@@ -1168,15 +1168,11 @@ const CompatibleShuttlesListScreen: React.FC<NavigationProps & { onBack: () => v
                 <div key={i} onClick={() => navigate('ShuttleDriverDetails')} className="bg-white p-4 rounded-lg shadow-md border border-gray-200 flex items-center space-x-4 cursor-pointer hover:shadow-lg transition-shadow">
                     <img src={`https://picsum.photos/seed/${i}/80/80`} alt="shuttle" className="w-20 h-20 rounded-md object-cover" />
                     <div className="flex-1">
-                        <h4 className="font-bold text-lg text-gray-800">Toyota Hiace</h4>
-                        <p className="text-gray-600">Driver: Kofi Mensah</p>
-                        <p className="text-sm text-gray-500">5 mins away</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-lg font-bold text-primary">$10.00</p>
-                        <div className="flex items-center text-yellow-500">
-                           <UserIcon className="w-4 h-4 mr-1" /> 4.8
+                        <div className="flex items-center">
+                            <BusIcon className="w-6 h-6 text-primary mr-2" />
+                            <h4 className="font-bold text-lg text-gray-800">Economy Shuttle</h4>
                         </div>
+                        <p className="text-gray-600 mt-1">Driver: Kofi Mensah</p>
                     </div>
                 </div>
             ))}
