@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
@@ -17,7 +18,8 @@ interface Car {
 }
 
 function usePrevious(value: Screen): Screen | undefined {
-    const ref = useRef<Screen>();
+    // FIX: Explicitly type the ref to hold `Screen` or `undefined` to satisfy stricter type checking.
+    const ref = useRef<Screen | undefined>();
     useEffect(() => {
         ref.current = value;
     }, [value]);
@@ -29,6 +31,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
   const [otpOrigin, setOtpOrigin] = useState<Screen>('Register');
   const [phoneForOTP, setPhoneForOTP] = useState({ phone: '241234567', code: '+233' });
   const [selectedCar, setSelectedCar] = useState<Car | null>(null);
+  const [selectedVehicleType, setSelectedVehicleType] = useState<string>('Economy Class');
   const previousScreen = usePrevious(screen);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -78,9 +81,9 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
       case 'ScheduleRide':
           return <ScheduleRideScreen navigate={navigate} />;
       case 'CarRental':
-          return <CarRentalScreen navigate={navigate} />;
+          return <CarRentalScreen navigate={navigate} setVehicleTypeForFilter={setSelectedVehicleType} />;
       case 'AvailableCarsForRent':
-          return <AvailableCarsForRentScreen navigate={navigate} onBack={() => navigate('CarRental')} onCarSelect={setSelectedCar}/>;
+          return <AvailableCarsForRentScreen navigate={navigate} onBack={() => navigate('CarRental')} onCarSelect={setSelectedCar} selectedClass={selectedVehicleType} />;
       case 'CarRentDetails':
           return <CarRentDetailsScreen navigate={navigate} car={selectedCar} onBack={() => navigate('AvailableCarsForRent')} />;
       case 'CompatibleShuttlesList':
@@ -1062,7 +1065,7 @@ const ScheduleRideScreen: React.FC<NavigationProps> = ({ navigate }) => {
     )
 };
 
-const CarRentalScreen: React.FC<NavigationProps> = ({ navigate }) => {
+const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (type: string) => void }> = ({ navigate, setVehicleTypeForFilter }) => {
     const [vehicleType, setVehicleType] = useState('Economy Class');
     const [pickupDateTime, setPickupDateTime] = useState('');
     const [returnDateTime, setReturnDateTime] = useState('');
@@ -1080,7 +1083,7 @@ const CarRentalScreen: React.FC<NavigationProps> = ({ navigate }) => {
         setAddons(prev => ({...prev, [addon]: !prev[addon]}));
     }
 
-    const CheckboxOption: React.FC<{ id: string, label: string, icon: React.ReactElement, checked: boolean, onChange: () => void }> = ({ id, label, icon, checked, onChange }) => (
+    const CheckboxOption: React.FC<{ id: string, label: string, icon: React.ReactElement<{ className?: string }>, checked: boolean, onChange: () => void }> = ({ id, label, icon, checked, onChange }) => (
          <div className="flex items-center justify-between">
             <div className="flex items-center">
                 {React.cloneElement(icon, { className: 'w-5 h-5 mr-3 text-gray-500' })}
@@ -1140,19 +1143,26 @@ const CarRentalScreen: React.FC<NavigationProps> = ({ navigate }) => {
                 
                 {/* Action Button */}
                 <div className="pt-2">
-                    <Button onClick={() => navigate('AvailableCarsForRent')} className="hover:animate-pulse">Continue</Button>
+                    <Button onClick={() => {
+                        setVehicleTypeForFilter(vehicleType);
+                        navigate('AvailableCarsForRent');
+                    }} className="hover:animate-pulse">Continue</Button>
                 </div>
             </div>
         </ScreenContainer>
     );
 };
 
-const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => void; onCarSelect: (car: Car) => void }> = ({ navigate, onBack, onCarSelect }) => {
+const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => void; onCarSelect: (car: Car) => void; selectedClass: string; }> = ({ navigate, onBack, onCarSelect, selectedClass }) => {
     const cars: Car[] = [
         { class: 'Economy Class', driver: 'John Doe', price: 50.00, seed: 'car1', description: 'Comfortable 4-seater with air conditioning and GPS tracking.' },
         { class: 'Business Class', driver: 'Jane Smith', price: 85.00, seed: 'car2', description: 'Luxury sedan with premium features for a first-class experience.' },
         { class: 'Ordinary Class', driver: 'Kwame Nkrumah', price: 48.00, seed: 'car3', description: 'A reliable and affordable option for everyday travel.' },
+        { class: 'Business Class', driver: 'Adwoa Williams', price: 90.00, seed: 'car4', description: 'Spacious and elegant for your business needs.' },
+        { class: 'Economy Class', driver: 'Kojo Antwi', price: 55.00, seed: 'car5', description: 'Fuel-efficient and easy to park.' },
     ];
+
+    const filteredCars = cars.filter(car => car.class === selectedClass);
 
     const handleSelect = (car: Car) => {
         onCarSelect(car);
@@ -1163,23 +1173,29 @@ const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => voi
         <ScreenContainer>
             <Header title="Cars for Rent" onBack={onBack} />
             <div className="p-4 space-y-3">
-                {cars.map((car, i) => (
-                    <div 
-                        key={i} 
-                        onClick={() => handleSelect(car)} 
-                        className="relative bg-white p-4 rounded-lg shadow-md border border-gray-200 flex items-center space-x-4 transition-all cursor-pointer hover:shadow-lg"
-                    >
-                        <img src={`https://picsum.photos/seed/${car.seed}/80/80`} alt="car" className="w-20 h-20 rounded-md object-cover" />
-                        <div className="flex-1">
-                            <h4 className="font-bold text-lg text-gray-800">{car.class}</h4>
-                            <p className="text-sm text-gray-500 mt-1">Driver: {car.driver}</p>
+                {filteredCars.length > 0 ? (
+                    filteredCars.map((car, i) => (
+                        <div 
+                            key={i} 
+                            onClick={() => handleSelect(car)} 
+                            className="relative bg-white p-4 rounded-lg shadow-md border border-gray-200 flex items-center space-x-4 transition-all cursor-pointer hover:shadow-lg"
+                        >
+                            <img src={`https://picsum.photos/seed/${car.seed}/80/80`} alt="car" className="w-20 h-20 rounded-md object-cover" />
+                            <div className="flex-1">
+                                <h4 className="font-bold text-lg text-gray-800">{car.class}</h4>
+                                <p className="text-sm text-gray-500 mt-1">Driver: {car.driver}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-sm text-gray-500">Base Rate:</p>
+                                <p className="text-lg font-bold text-primary">${car.price.toFixed(2)}<span className="text-sm font-normal text-gray-500">/day</span></p>
+                            </div>
                         </div>
-                        <div className="text-right">
-                            <p className="text-sm text-gray-500">Base Rate:</p>
-                            <p className="text-lg font-bold text-primary">${car.price.toFixed(2)}<span className="text-sm font-normal text-gray-500">/day</span></p>
-                        </div>
+                    ))
+                ) : (
+                    <div className="text-center p-8 text-gray-500">
+                        <p>No cars available for the selected class.</p>
                     </div>
-                ))}
+                )}
             </div>
         </ScreenContainer>
     );
@@ -1437,7 +1453,8 @@ const TripCompletionReceiptScreen: React.FC<NavigationProps> = ({ navigate }) =>
 
 const TripHistoryScreen: React.FC<NavigationProps> = ({ navigate }) => {
     // FIX: Typed icon as React.ReactElement to allow cloning with props and resolve the JSX namespace error.
-    const trips: { status: string; color: string; icon: React.ReactElement }[] = [
+    // FIX: Explicitly type the icon prop to include `className` for React.cloneElement.
+    const trips: { status: string; color: string; icon: React.ReactElement<{ className?: string }> }[] = [
         { status: 'Completed', color: 'green-500', icon: <CheckCircleIcon/> }, 
         { status: 'Completed', color: 'green-500', icon: <CheckCircleIcon/> }, 
         { status: 'Cancelled', color: 'red-500', icon: <XCircleIcon/> }
