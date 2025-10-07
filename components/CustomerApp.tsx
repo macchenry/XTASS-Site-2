@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
@@ -1136,29 +1135,38 @@ const CarRentalScreen: React.FC<NavigationProps> = ({ navigate }) => {
     );
 };
 
-const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => void }> = ({ navigate, onBack }) => (
-    <ScreenContainer>
-        <Header title="Available Cars for Rent" onBack={onBack} />
-        <div className="p-4 space-y-3">
-            {[1, 2, 3].map(i => (
-                <div key={i} onClick={() => navigate('ShuttleDriverDetails')} className="bg-white p-4 rounded-lg shadow-md border border-gray-200 flex items-center space-x-4 cursor-pointer hover:shadow-lg transition-shadow">
-                    <img src={`https://picsum.photos/seed/car${i}/80/80`} alt="car" className="w-20 h-20 rounded-md object-cover" />
-                    <div className="flex-1">
-                        <h4 className="font-bold text-lg text-gray-800">Toyota Corolla</h4>
-                        <p className="text-gray-600">Economy Class</p>
-                        <p className="text-sm text-gray-500">Available now</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-lg font-bold text-primary">$50.00/day</p>
-                        <div className="flex items-center text-yellow-500">
-                           <UserIcon className="w-4 h-4 mr-1" /> 4.9
+const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => void }> = ({ navigate, onBack }) => {
+    const cars = [
+        { class: 'Economy Class', driver: 'John Doe', price: 50.00, seed: 'car1' },
+        { class: 'Business Class', driver: 'Jane Smith', price: 85.00, seed: 'car2' },
+        { class: 'Ordinary Class', driver: 'Kwame Nkrumah', price: 48.00, seed: 'car3' },
+    ];
+
+    return (
+        <ScreenContainer>
+            <Header title="Available Cars for Rent" onBack={onBack} />
+            <div className="p-4 space-y-3">
+                {cars.map((car, i) => (
+                    <div 
+                        key={i} 
+                        onClick={() => navigate('ShuttleDriverDetails')} 
+                        className="relative bg-white p-4 rounded-lg shadow-md border border-gray-200 flex items-center space-x-4 transition-all cursor-pointer hover:shadow-lg"
+                    >
+                        <img src={`https://picsum.photos/seed/${car.seed}/80/80`} alt="car" className="w-20 h-20 rounded-md object-cover" />
+                        <div className="flex-1">
+                            <h4 className="font-bold text-lg text-gray-800">{car.class}</h4>
+                            <p className="text-sm text-gray-500 mt-1">Driver: {car.driver}</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-sm text-gray-500">Base Rate:</p>
+                            <p className="text-lg font-bold text-primary">${car.price.toFixed(2)}<span className="text-sm font-normal text-gray-500">/day</span></p>
                         </div>
                     </div>
-                </div>
-            ))}
-        </div>
-    </ScreenContainer>
-);
+                ))}
+            </div>
+        </ScreenContainer>
+    );
+};
 
 const CompatibleShuttlesListScreen: React.FC<NavigationProps & { onBack: () => void }> = ({ navigate, onBack }) => (
     <ScreenContainer>
