@@ -85,9 +85,9 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
       case 'ServiceSelection':
           return <ServiceSelectionScreen navigate={navigate} logout={logout} setFlow={setCurrentFlow} />;
       case 'TripDetailsInput':
-          return <TripDetailsInputScreen navigate={navigate} />;
+          return <TripDetailsInputScreen navigate={navigate} setVehicleTypeForFilter={setSelectedVehicleClassInfo} />;
       case 'ScheduleRide':
-          return <ScheduleRideScreen navigate={navigate} />;
+          return <ScheduleRideScreen navigate={navigate} setVehicleTypeForFilter={setSelectedVehicleClassInfo} />;
       case 'CarRental':
           return <CarRentalScreen navigate={navigate} setVehicleTypeForFilter={setSelectedVehicleClassInfo} setRentalDuration={setRentalDuration} />;
       case 'AvailableCarsForRent':
@@ -96,7 +96,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
           return <CarRentDetailsScreen navigate={navigate} car={selectedCar} onBack={() => navigate('AvailableCarsForRent')} rentalDuration={rentalDuration} />;
       case 'CompatibleShuttlesList':
           const backTarget = previousScreen === 'ScheduleRide' ? 'ScheduleRide' : 'TripDetailsInput';
-          return <CompatibleShuttlesListScreen navigate={navigate} onBack={() => navigate(backTarget)} />;
+          return <CompatibleShuttlesListScreen navigate={navigate} onBack={() => navigate(backTarget)} selectedClassInfo={selectedVehicleClassInfo} />;
       case 'ShuttleDriverDetails':
           return <ShuttleDriverDetailsScreen navigate={navigate} />;
       case 'BookingConfirmation':
@@ -832,7 +832,10 @@ const ServiceSelectionScreen: React.FC<NavigationProps & { setFlow: (flow: 'shut
     </ScreenContainer>
 );
 
-const TripDetailsInputScreen: React.FC<NavigationProps> = ({ navigate }) => {
+interface TripDetailsInputScreenProps extends NavigationProps {
+  setVehicleTypeForFilter: (info: VehicleClassInfo | null) => void;
+}
+const TripDetailsInputScreen: React.FC<TripDetailsInputScreenProps> = ({ navigate, setVehicleTypeForFilter }) => {
     const [childSeat, setChildSeat] = useState(false);
     const [wheelchairAccess, setWheelchairAccess] = useState(false);
     const [luggagePhotos, setLuggagePhotos] = useState<File[]>([]);
@@ -964,14 +967,25 @@ const TripDetailsInputScreen: React.FC<NavigationProps> = ({ navigate }) => {
                 </div>
                 
                 <div className="pt-2">
-                    <Button onClick={() => navigate('CompatibleShuttlesList')}>Find A Ride</Button>
+                    <Button onClick={() => {
+                        if (vehicleType) {
+                            const selectedVehicle = vehicleTypes[vehicleType as keyof typeof vehicleTypes];
+                            setVehicleTypeForFilter({ name: selectedVehicle.name, baseRate: selectedVehicle.baseRate });
+                        } else {
+                            setVehicleTypeForFilter(null);
+                        }
+                        navigate('CompatibleShuttlesList');
+                    }}>Find A Ride</Button>
                 </div>
             </div>
         </ScreenContainer>
     );
 };
 
-const ScheduleRideScreen: React.FC<NavigationProps> = ({ navigate }) => {
+interface ScheduleRideScreenProps extends NavigationProps {
+  setVehicleTypeForFilter: (info: VehicleClassInfo | null) => void;
+}
+const ScheduleRideScreen: React.FC<ScheduleRideScreenProps> = ({ navigate, setVehicleTypeForFilter }) => {
     const [childSeat, setChildSeat] = useState(false);
     const [wheelchairAccess, setWheelchairAccess] = useState(false);
     const [luggagePhotos, setLuggagePhotos] = useState<File[]>([]);
@@ -1104,7 +1118,15 @@ const ScheduleRideScreen: React.FC<NavigationProps> = ({ navigate }) => {
             </div>
             
             <div className="pt-2">
-                <Button onClick={() => navigate('CompatibleShuttlesList')}>Find A Ride</Button>
+                <Button onClick={() => {
+                    if (vehicleType) {
+                        const selectedVehicle = vehicleTypes[vehicleType as keyof typeof vehicleTypes];
+                        setVehicleTypeForFilter({ name: selectedVehicle.name, baseRate: selectedVehicle.baseRate });
+                    } else {
+                        setVehicleTypeForFilter(null);
+                    }
+                    navigate('CompatibleShuttlesList');
+                }}>Find A Ride</Button>
             </div>
         </div>
     </ScreenContainer>
@@ -1378,15 +1400,26 @@ const CarRentDetailsScreen: React.FC<NavigationProps & { car: Car | null; onBack
 };
 
 
-const CompatibleShuttlesListScreen: React.FC<NavigationProps & { onBack: () => void }> = ({ navigate, onBack }) => {
+interface CompatibleShuttlesListScreenProps extends NavigationProps {
+  onBack: () => void;
+  selectedClassInfo: VehicleClassInfo | null;
+}
+const CompatibleShuttlesListScreen: React.FC<CompatibleShuttlesListScreenProps> = ({ navigate, onBack, selectedClassInfo }) => {
     const shuttles = [
-        { class: 'Economy Shuttle', name: 'Toyota Hiace', driver: 'Kofi Mensah', price: 100.00, distance: 50, seed: 'shuttle1' },
-        { class: 'Business Shuttle', name: 'Hyundai H1', driver: 'Ama Serwaa', price: 180.00, distance: 75, seed: 'shuttle2' },
-        { class: 'Ordinary Shuttle', name: 'Mercedes Sprinter', driver: 'Yaw Boateng', price: 120.00, distance: 60, seed: 'shuttle3' },
+        { class: 'Economy Class', name: 'Toyota Hiace', driver: 'Kofi Mensah', price: 100.00, distance: 50, seed: 'shuttle1' },
+        { class: 'Business Class', name: 'Hyundai H1', driver: 'Ama Serwaa', price: 180.00, distance: 75, seed: 'shuttle2' },
+        { class: 'Ordinary Class', name: 'Mercedes Sprinter', driver: 'Yaw Boateng', price: 120.00, distance: 60, seed: 'shuttle3' },
+        { class: 'Business Class', name: 'Ford Transit', driver: 'Adwoa Williams', price: 185.00, distance: 75, seed: 'shuttle4' },
+        { class: 'Economy Class', name: 'Nissan Urvan', driver: 'Kojo Antwi', price: 105.00, distance: 50, seed: 'shuttle5' },
+        { class: 'Ordinary Class', name: 'IVECo Daily', driver: 'Abena Yeboah', price: 122.00, distance: 60, seed: 'shuttle6' },
     ];
 
+    const filteredShuttles = selectedClassInfo
+        ? shuttles.filter(shuttle => shuttle.class === selectedClassInfo.name)
+        : shuttles;
+
     // Find the cheapest shuttle to display its info in the header as a feature
-    const featuredShuttle = [...shuttles].sort((a, b) => a.price - b.price)[0];
+    const featuredShuttle = filteredShuttles.length > 0 ? [...filteredShuttles].sort((a, b) => a.price - b.price)[0] : null;
 
     return (
         <ScreenContainer>
@@ -1401,13 +1434,18 @@ const CompatibleShuttlesListScreen: React.FC<NavigationProps & { onBack: () => v
                 </div>
             </header>
             <div className="p-4 bg-gray-50 border-b border-gray-200">
-                <h2 className="text-xl font-bold font-display text-primary">{featuredShuttle.class}</h2>
-                <p className="text-md font-semibold text-gray-700">Base Rate: ${featuredShuttle.price.toFixed(2)}<span className="text-sm font-normal text-gray-500">/{featuredShuttle.distance}km</span></p>
+                <h2 className="text-xl font-bold font-display text-primary">{selectedClassInfo?.name ?? "All Shuttles"}</h2>
+                 {featuredShuttle && (
+                     <p className="text-md font-semibold text-gray-700">
+                        Rates from: ${featuredShuttle.price.toFixed(2)}
+                        <span className="text-sm font-normal text-gray-500">/{featuredShuttle.distance}km</span>
+                    </p>
+                )}
             </div>
             <div className="p-4">
-                {shuttles.length > 0 ? (
+                {filteredShuttles.length > 0 ? (
                     <div className="grid grid-cols-2 gap-4">
-                        {shuttles.map((shuttle, i) => (
+                        {filteredShuttles.map((shuttle, i) => (
                             <div 
                                 key={i} 
                                 onClick={() => navigate('ShuttleDriverDetails')} 
@@ -1424,7 +1462,7 @@ const CompatibleShuttlesListScreen: React.FC<NavigationProps & { onBack: () => v
                     <div className="text-center py-16 text-gray-500">
                         <BusIcon className="w-16 h-16 mx-auto text-gray-300" />
                         <p className="mt-2 font-semibold">No shuttles available</p>
-                        <p className="text-sm">Please try adjusting your search.</p>
+                        <p className="text-sm">Please try a different vehicle class.</p>
                     </div>
                 )}
             </div>
