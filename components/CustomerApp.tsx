@@ -1170,9 +1170,9 @@ const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => voi
 
 const CompatibleShuttlesListScreen: React.FC<NavigationProps & { onBack: () => void }> = ({ navigate, onBack }) => {
     const shuttles = [
-        { class: 'Economy Shuttle', driver: 'Kofi Mensah', price: 100.00, seed: 'shuttle1' },
-        { class: 'Business Shuttle', driver: 'Ama Serwaa', price: 180.00, seed: 'shuttle2' },
-        { class: 'Standard Shuttle', driver: 'Yaw Boateng', price: 120.00, seed: 'shuttle3' },
+        { class: 'Economy Shuttle', driver: 'Kofi Mensah', price: 100.00, distance: 50, seed: 'shuttle1' },
+        { class: 'Business Shuttle', driver: 'Ama Serwaa', price: 180.00, distance: 75, seed: 'shuttle2' },
+        { class: 'Ordinary Shuttle', driver: 'Yaw Boateng', price: 120.00, distance: 60, seed: 'shuttle3' },
     ];
 
     return (
@@ -1201,7 +1201,7 @@ const CompatibleShuttlesListScreen: React.FC<NavigationProps & { onBack: () => v
                         </div>
                         <div className="text-right">
                             <p className="text-sm text-gray-500">Base Rate:</p>
-                            <p className="text-lg font-bold text-[#660032]">GHS {shuttle.price.toFixed(2)}<span className="text-sm font-normal text-gray-500">/day</span></p>
+                            <p className="text-lg font-bold text-[#660032]">${shuttle.price.toFixed(2)}<span className="text-sm font-normal text-gray-500">/{shuttle.distance}km</span></p>
                         </div>
                     </div>
                 ))}
