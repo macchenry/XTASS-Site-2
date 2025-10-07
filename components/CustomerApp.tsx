@@ -1245,13 +1245,15 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
                 <div className="pt-2">
                     <Button
                         onClick={() => {
-                            if (!vehicleType) return;
-                            const selectedVehicle = vehicleTypes[vehicleType as keyof typeof vehicleTypes];
-                            setVehicleTypeForFilter({ name: selectedVehicle.name, baseRate: selectedVehicle.baseRate });
+                            if (vehicleType) {
+                                const selectedVehicle = vehicleTypes[vehicleType as keyof typeof vehicleTypes];
+                                setVehicleTypeForFilter({ name: selectedVehicle.name, baseRate: selectedVehicle.baseRate });
+                            } else {
+                                setVehicleTypeForFilter(null);
+                            }
                             navigate('AvailableCarsForRent');
                         }}
-                        className="hover:animate-pulse disabled:bg-gray-400 disabled:cursor-not-allowed"
-                        disabled={!vehicleType}
+                        className="hover:animate-pulse"
                     >
                         Continue
                     </Button>
@@ -1271,17 +1273,11 @@ const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => voi
         { class: 'Economy Class', driver: 'Abena Yeboah', price: 82.00, seed: 'car6', description: 'Modern compact, great for city driving.' },
     ];
     
-    useEffect(() => {
-        if (!selectedClassInfo) {
-            onBack();
-        }
-    }, [selectedClassInfo, onBack]);
+    const filteredCars = selectedClassInfo
+        ? cars.filter(car => car.class === selectedClassInfo.name)
+        : cars;
 
-    if (!selectedClassInfo) {
-        return null; // or a loading spinner, or redirect immediately
-    }
-
-    const filteredCars = cars.filter(car => car.class === selectedClassInfo.name);
+    const minBaseRate = cars.length > 0 ? Math.min(...cars.map(car => car.price)) : 0;
 
     const handleSelect = (car: Car) => {
         onCarSelect(car);
@@ -1292,8 +1288,8 @@ const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => voi
         <ScreenContainer>
             <Header title="Cars for Rent" onBack={onBack} />
              <div className="p-4 bg-gray-50 border-b border-gray-200">
-                <h2 className="text-xl font-bold font-display text-primary">{selectedClassInfo.name}</h2>
-                <p className="text-md font-semibold text-gray-700">Base Rate: ${selectedClassInfo.baseRate.toFixed(2)}<span className="text-sm font-normal text-gray-500">/day</span></p>
+                <h2 className="text-xl font-bold font-display text-primary">{selectedClassInfo?.name ?? 'All Cars for Rent'}</h2>
+                <p className="text-md font-semibold text-gray-700">Base Rate: ${(selectedClassInfo?.baseRate ?? minBaseRate).toFixed(2)}<span className="text-sm font-normal text-gray-500">/day</span></p>
             </div>
             <div className="p-4">
                 {filteredCars.length > 0 ? (
