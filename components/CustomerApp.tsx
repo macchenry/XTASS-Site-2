@@ -1144,7 +1144,7 @@ const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => voi
 
     return (
         <ScreenContainer>
-            <Header title="Available Cars for Rent" onBack={onBack} />
+            <Header title="Cars for Rent" onBack={onBack} />
             <div className="p-4 space-y-3">
                 {cars.map((car, i) => (
                     <div 
