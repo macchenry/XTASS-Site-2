@@ -39,6 +39,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
   const [phoneForOTP, setPhoneForOTP] = useState({ phone: '241234567', code: '+233' });
   const [selectedCar, setSelectedCar] = useState<Car | null>(null);
   const [selectedVehicleClassInfo, setSelectedVehicleClassInfo] = useState<VehicleClassInfo>({ name: 'Economy Class', baseRate: 80 });
+  const [rentalDuration, setRentalDuration] = useState(0);
   const previousScreen = usePrevious(screen);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -88,11 +89,11 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
       case 'ScheduleRide':
           return <ScheduleRideScreen navigate={navigate} />;
       case 'CarRental':
-          return <CarRentalScreen navigate={navigate} setVehicleTypeForFilter={setSelectedVehicleClassInfo} />;
+          return <CarRentalScreen navigate={navigate} setVehicleTypeForFilter={setSelectedVehicleClassInfo} setRentalDuration={setRentalDuration} />;
       case 'AvailableCarsForRent':
           return <AvailableCarsForRentScreen navigate={navigate} onBack={() => navigate('CarRental')} onCarSelect={setSelectedCar} selectedClassInfo={selectedVehicleClassInfo} />;
       case 'CarRentDetails':
-          return <CarRentDetailsScreen navigate={navigate} car={selectedCar} onBack={() => navigate('AvailableCarsForRent')} />;
+          return <CarRentDetailsScreen navigate={navigate} car={selectedCar} onBack={() => navigate('AvailableCarsForRent')} rentalDuration={rentalDuration} />;
       case 'CompatibleShuttlesList':
           const backTarget = previousScreen === 'ScheduleRide' ? 'ScheduleRide' : 'TripDetailsInput';
           return <CompatibleShuttlesListScreen navigate={navigate} onBack={() => navigate(backTarget)} />;
@@ -1072,13 +1073,29 @@ const ScheduleRideScreen: React.FC<NavigationProps> = ({ navigate }) => {
     )
 };
 
-const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (info: VehicleClassInfo) => void }> = ({ navigate, setVehicleTypeForFilter }) => {
+const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (info: VehicleClassInfo) => void; setRentalDuration: (duration: number) => void; }> = ({ navigate, setVehicleTypeForFilter, setRentalDuration }) => {
     const [vehicleType, setVehicleType] = useState('Economy Class');
     const [pickupDateTime, setPickupDateTime] = useState('');
     const [returnDateTime, setReturnDateTime] = useState('');
+    const [duration, setDuration] = useState(0);
     const [addons, setAddons] = useState({
         childSeat: false,
     });
+
+    useEffect(() => {
+        let calculatedDuration = 0;
+        if (pickupDateTime && returnDateTime) {
+            const start = new Date(pickupDateTime);
+            const end = new Date(returnDateTime);
+            if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end > start) {
+                const diffTime = end.getTime() - start.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                calculatedDuration = diffDays;
+            }
+        }
+        setDuration(calculatedDuration);
+        setRentalDuration(calculatedDuration); // Also update parent state in real-time
+    }, [pickupDateTime, returnDateTime, setRentalDuration]);
 
     const vehicleTypes = {
         'Business Class': { name: 'Business Class', icon: <CarIcon/>, baseRate: 150 },
@@ -1118,9 +1135,19 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
                 </div>
                 
                 {/* Date & Time Selector */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input id="pickup-datetime" label="Pick-up Date & Time" type="datetime-local" onChange={e => setPickupDateTime(e.target.value)} />
-                    <Input id="return-datetime" label="Return Date & Time" type="datetime-local" onChange={e => setReturnDateTime(e.target.value)} />
+                <div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input id="pickup-datetime" label="Pick-up Date & Time" type="datetime-local" value={pickupDateTime} onChange={e => setPickupDateTime(e.target.value)} />
+                        <Input id="return-datetime" label="Return Date & Time" type="datetime-local" value={returnDateTime} onChange={e => setReturnDateTime(e.target.value)} />
+                    </div>
+                    {duration > 0 && (
+                        <div className="mt-4">
+                            <label className="block text-sm font-medium text-gray-700">Rental Duration</label>
+                            <div className="mt-1 bg-gray-100 p-3 rounded-md text-center">
+                                <p className="font-bold text-lg text-gray-800">{duration} Day{duration > 1 ? 's' : ''}</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Location Inputs */}
@@ -1153,6 +1180,7 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
                     <Button onClick={() => {
                         const selectedVehicle = vehicleTypes[vehicleType as keyof typeof vehicleTypes];
                         setVehicleTypeForFilter({ name: selectedVehicle.name, baseRate: selectedVehicle.baseRate });
+                        // Duration is already set in parent state
                         navigate('AvailableCarsForRent');
                     }} className="hover:animate-pulse">Continue</Button>
                 </div>
@@ -1163,12 +1191,12 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
 
 const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => void; onCarSelect: (car: Car) => void; selectedClassInfo: VehicleClassInfo; }> = ({ navigate, onBack, onCarSelect, selectedClassInfo }) => {
     const cars: Car[] = [
-        { class: 'Economy Class', driver: 'John Doe', price: 50.00, seed: 'car1', description: 'Comfortable 4-seater with A/C.' },
-        { class: 'Business Class', driver: 'Jane Smith', price: 85.00, seed: 'car2', description: 'Luxury sedan with premium features.' },
-        { class: 'Ordinary Class', driver: 'Kwame Nkrumah', price: 48.00, seed: 'car3', description: 'A reliable and affordable option.' },
-        { class: 'Business Class', driver: 'Adwoa Williams', price: 90.00, seed: 'car4', description: 'Spacious and elegant for business.' },
-        { class: 'Economy Class', driver: 'Kojo Antwi', price: 55.00, seed: 'car5', description: 'Fuel-efficient and easy to park.' },
-        { class: 'Economy Class', driver: 'Abena Yeboah', price: 52.00, seed: 'car6', description: 'Modern compact, great for city driving.' },
+        { class: 'Economy Class', driver: 'John Doe', price: 80.00, seed: 'car1', description: 'Comfortable 4-seater with A/C.' },
+        { class: 'Business Class', driver: 'Jane Smith', price: 150.00, seed: 'car2', description: 'Luxury sedan with premium features.' },
+        { class: 'Ordinary Class', driver: 'Kwame Nkrumah', price: 50.00, seed: 'car3', description: 'A reliable and affordable option.' },
+        { class: 'Business Class', driver: 'Adwoa Williams', price: 155.00, seed: 'car4', description: 'Spacious and elegant for business.' },
+        { class: 'Economy Class', driver: 'Kojo Antwi', price: 85.00, seed: 'car5', description: 'Fuel-efficient and easy to park.' },
+        { class: 'Economy Class', driver: 'Abena Yeboah', price: 82.00, seed: 'car6', description: 'Modern compact, great for city driving.' },
     ];
 
     const filteredCars = cars.filter(car => car.class === selectedClassInfo.name);
@@ -1213,7 +1241,7 @@ const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => voi
     );
 };
 
-const CarRentDetailsScreen: React.FC<NavigationProps & { car: Car | null; onBack: () => void; }> = ({ navigate, car, onBack }) => {
+const CarRentDetailsScreen: React.FC<NavigationProps & { car: Car | null; onBack: () => void; rentalDuration: number }> = ({ navigate, car, onBack, rentalDuration }) => {
     if (!car) {
         useEffect(() => {
             onBack();
@@ -1227,6 +1255,8 @@ const CarRentDetailsScreen: React.FC<NavigationProps & { car: Car | null; onBack
         { name: "24/7 Support", icon: <PhoneIcon className="w-6 h-6 text-primary"/> },
         { name: "Free Cancellation", icon: <CheckCircleIcon className="w-6 h-6 text-primary"/> },
     ];
+    
+    const totalPrice = rentalDuration > 0 ? car.price * rentalDuration : car.price;
 
     return (
         <ScreenContainer>
@@ -1264,9 +1294,15 @@ const CarRentDetailsScreen: React.FC<NavigationProps & { car: Car | null; onBack
                                 <span className="text-gray-600">Base Rate:</span>
                                 <span className="font-semibold text-gray-800">${car.price.toFixed(2)}/day</span>
                             </div>
+                            {rentalDuration > 0 && (
+                                <div className="flex justify-between">
+                                    <span className="text-gray-600">Duration:</span>
+                                    <span className="font-semibold text-gray-800">{rentalDuration} Day{rentalDuration > 1 ? 's' : ''}</span>
+                                </div>
+                            )}
                              <div className="flex justify-between items-center pt-3 border-t mt-3">
-                                <span className="text-lg font-bold text-gray-800">Total Estimate:</span>
-                                <span className="text-xl font-bold text-primary">$_.__</span>
+                                <span className="text-lg font-bold text-gray-800">Total Price:</span>
+                                <span className="text-xl font-bold text-primary">${totalPrice.toFixed(2)}</span>
                             </div>
                         </div>
                     </div>
