@@ -102,7 +102,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
       case 'BookingConfirmation':
           return <BookingConfirmationScreen navigate={navigate} />;
       case 'PaymentSelection':
-          const paymentBackTarget = previousScreen === 'CarRentDetails' ? 'CarRentDetails' : 'BookingConfirmation';
+          const paymentBackTarget = currentFlow === 'rental' ? 'CarRentDetails' : 'BookingConfirmation';
           return <PaymentSelectionScreen navigate={navigate} onBack={() => navigate(paymentBackTarget)} />;
       case 'PaymentProcessing':
           return <PaymentProcessingScreen navigate={navigate} showToast={showToast} flow={currentFlow} />;
@@ -1075,10 +1075,12 @@ const ScheduleRideScreen: React.FC<NavigationProps> = ({ navigate }) => {
 };
 
 const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (info: VehicleClassInfo) => void; setRentalDuration: (duration: number) => void; }> = ({ navigate, setVehicleTypeForFilter, setRentalDuration }) => {
-    const [vehicleType, setVehicleType] = useState('Economy Class');
+    const [vehicleType, setVehicleType] = useState<string | null>(null);
     const [pickupDateTime, setPickupDateTime] = useState('');
     const [returnDateTime, setReturnDateTime] = useState('');
     const [duration, setDuration] = useState(0);
+    const [passengers, setPassengers] = useState('1');
+    const [luggage, setLuggage] = useState('2');
     const [addons, setAddons] = useState({
         childSeat: false,
     });
@@ -1141,6 +1143,10 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
                         <Input id="pickup-datetime" label="Pick-up Date & Time" type="datetime-local" value={pickupDateTime} onChange={e => setPickupDateTime(e.target.value)} />
                         <Input id="return-datetime" label="Return Date & Time" type="datetime-local" value={returnDateTime} onChange={e => setReturnDateTime(e.target.value)} />
                     </div>
+                    <div className="mt-4 space-y-4">
+                        <Input id="passengers-rental" label="Passengers" type="number" placeholder="1" icon={<UsersIcon className="w-5 h-5 text-gray-400" />} value={passengers} onChange={e => setPassengers(e.target.value)} />
+                        <Input id="luggage-rental" label="Luggage" type="number" placeholder="2" icon={<BriefcaseIcon className="w-5 h-5 text-gray-400" />} value={luggage} onChange={e => setLuggage(e.target.value)} />
+                    </div>
                     {duration > 0 && (
                         <div className="mt-4">
                             <label className="block text-sm font-medium text-gray-700">Rental Duration</label>
@@ -1163,7 +1169,7 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
                     <div className="flex items-center bg-gray-50 p-3 rounded-md">
                         <label htmlFor="base-rate" className="block text-sm text-gray-900 mr-2">Minimum Base Rate:</label>
                         <span id="base-rate" className="font-semibold text-gray-800">
-                           ${vehicleTypes[vehicleType as keyof typeof vehicleTypes].baseRate.toFixed(2)}
+                           {vehicleType ? `$${vehicleTypes[vehicleType as keyof typeof vehicleTypes].baseRate.toFixed(2)}` : '---'}
                         </span>
                     </div>
                 </div>
@@ -1178,12 +1184,18 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
                 
                 {/* Action Button */}
                 <div className="pt-2">
-                    <Button onClick={() => {
-                        const selectedVehicle = vehicleTypes[vehicleType as keyof typeof vehicleTypes];
-                        setVehicleTypeForFilter({ name: selectedVehicle.name, baseRate: selectedVehicle.baseRate });
-                        // Duration is already set in parent state
-                        navigate('AvailableCarsForRent');
-                    }} className="hover:animate-pulse">Continue</Button>
+                    <Button
+                        onClick={() => {
+                            if (!vehicleType) return;
+                            const selectedVehicle = vehicleTypes[vehicleType as keyof typeof vehicleTypes];
+                            setVehicleTypeForFilter({ name: selectedVehicle.name, baseRate: selectedVehicle.baseRate });
+                            navigate('AvailableCarsForRent');
+                        }}
+                        className="hover:animate-pulse disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        disabled={!vehicleType}
+                    >
+                        Continue
+                    </Button>
                 </div>
             </div>
         </ScreenContainer>
@@ -1496,6 +1508,7 @@ const TripCompletionReceiptScreen: React.FC<NavigationProps & { flow: 'shuttle' 
                     <h3 className="font-bold text-lg mb-2">Receipt</h3>
                     {isRental ? (
                         <>
+                            <div className="flex justify-between"><span>Car Model</span><span>{car.class}</span></div>
                             <div className="flex justify-between"><span>Daily Rate</span><span>${car.price.toFixed(2)}</span></div>
                             <div className="flex justify-between"><span>Duration</span><span>{duration} Day{duration > 1 ? 's' : ''}</span></div>
                         </>
