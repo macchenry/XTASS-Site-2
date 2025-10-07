@@ -1434,10 +1434,10 @@ const CompatibleShuttlesListScreen: React.FC<CompatibleShuttlesListScreenProps> 
                 </div>
             </header>
             <div className="p-4 bg-gray-50 border-b border-gray-200">
-                <h2 className="text-xl font-bold font-display text-primary">{selectedClassInfo?.name ?? "All Shuttles"}</h2>
+                <h2 className="text-xl font-bold font-display text-primary">{selectedClassInfo?.name ?? "All Available Shuttles"}</h2>
                  {featuredShuttle && (
                      <p className="text-md font-semibold text-gray-700">
-                        Rates from: ${featuredShuttle.price.toFixed(2)}
+                        {selectedClassInfo ? 'Rates from:' : 'Base rates from:'} ${featuredShuttle.price.toFixed(2)}
                         <span className="text-sm font-normal text-gray-500">/{featuredShuttle.distance}km</span>
                     </p>
                 )}
