@@ -338,7 +338,7 @@ const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean, lo
                 </div>
             </Modal>
             
-            <button onClick={isLogin ? logout : () => navigate('Login')} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Go back">
+            <button onClick={() => isLogin ? navigate('Welcome') : navigate('Login')} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Go back">
                 <ChevronLeftIcon className="w-6 h-6" />
             </button>
             <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg mt-12">
@@ -1395,26 +1395,77 @@ const CompatibleShuttlesListScreen: React.FC<NavigationProps & { onBack: () => v
     );
 };
 
-const ShuttleDriverDetailsScreen: React.FC<NavigationProps> = ({ navigate }) => (
-    <ScreenContainer>
-        <Header title="Shuttle Details" onBack={() => navigate('CompatibleShuttlesList')} />
-        <div className="p-4">
-            <img src="https://images.unsplash.com/photo-1544652478-6653e09f18a2?w=400&h=200&fit=crop&q=80" alt="Passenger with her luggage at the airport" className="w-full h-48 rounded-lg object-cover mb-4" />
-            <h3 className="text-2xl font-bold font-display">Toyota Hiace - GT-1234-20</h3>
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-bold text-lg mb-2">Driver: Kofi Mensah</h4>
-                <div className="flex items-center text-gray-600">
-                    <UserIcon className="w-5 h-5 mr-2 text-primary" />
-                    <span>4.8 Rating</span>
+const ShuttleDriverDetailsScreen: React.FC<NavigationProps> = ({ navigate }) => {
+    const features = [
+        { name: "Up to 15 Passengers", icon: <UsersIcon className="w-6 h-6 text-primary"/> },
+        { name: "Large Luggage Space", icon: <BriefcaseIcon className="w-6 h-6 text-primary"/> },
+        { name: "Air Conditioning", icon: <SnowflakeIcon className="w-6 h-6 text-primary"/> },
+        { name: "24/7 Support", icon: <PhoneIcon className="w-6 h-6 text-primary"/> },
+    ];
+    
+    // Hardcoded shuttle details
+    const shuttle = {
+        class: 'Economy Shuttle',
+        name: 'Toyota Hiace',
+        licensePlate: 'GT-1234-20',
+        driver: 'Kofi Mensah',
+        price: 100.00,
+        description: "Comfortable and spacious shuttle, perfect for groups and families. Enjoy a smooth ride to your destination.",
+        seed: 'shuttle1' // for image
+    };
+
+    return (
+        <ScreenContainer>
+            <Header title="Shuttle Details" onBack={() => navigate('CompatibleShuttlesList')} />
+            <div>
+                <img src={`https://picsum.photos/seed/${shuttle.seed}/400/200`} alt={shuttle.name} className="w-full h-48 object-cover" />
+                
+                <div className="p-4">
+                    {/* Shuttle Info Card */}
+                    <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200 -mt-16 relative z-10">
+                        <h3 className="text-2xl font-bold font-display text-primary">{shuttle.name} - {shuttle.licensePlate}</h3>
+                        <p className="text-md text-gray-600 mt-1">Driver: {shuttle.driver}</p>
+                        <p className="text-lg font-semibold text-gray-800 mt-2">Base Fare: <span className="text-primary font-bold">${shuttle.price.toFixed(2)}</span></p>
+                        <p className="text-sm text-gray-500 mt-2">{shuttle.description}</p>
+                    </div>
+
+                    {/* Features Section */}
+                    <div className="mt-6">
+                        <h4 className="font-bold text-lg text-gray-800 mb-3">Features</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                            {features.map(feature => (
+                                <div key={feature.name} className="bg-gray-50 p-4 rounded-lg flex items-center space-x-3">
+                                    {feature.icon}
+                                    <span className="font-semibold text-sm text-gray-700">{feature.name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Pricing Section */}
+                    <div className="mt-6 bg-white p-4 rounded-lg shadow-md border">
+                        <h4 className="font-bold text-lg text-gray-800 mb-3">Pricing</h4>
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Trip Fare:</span>
+                                <span className="font-semibold text-gray-800">${shuttle.price.toFixed(2)}</span>
+                            </div>
+                             <div className="flex justify-between items-center pt-3 border-t mt-3">
+                                <span className="text-lg font-bold text-gray-800">Total Price:</span>
+                                <span className="text-xl font-bold text-primary">${shuttle.price.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                 <p className="text-sm text-gray-500 mt-1">500+ trips completed</p>
+
+                {/* Action Button */}
+                 <div className="p-4 mt-2">
+                    <Button onClick={() => navigate('BookingConfirmation')}>Book This Shuttle</Button>
+                </div>
             </div>
-            <div className="mt-6">
-                <Button onClick={() => navigate('BookingConfirmation')}>Book This Shuttle</Button>
-            </div>
-        </div>
-    </ScreenContainer>
-);
+        </ScreenContainer>
+    );
+};
 
 
 const BookingConfirmationScreen: React.FC<NavigationProps> = ({ navigate }) => (
