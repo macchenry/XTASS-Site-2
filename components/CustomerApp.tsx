@@ -838,6 +838,13 @@ const TripDetailsInputScreen: React.FC<NavigationProps> = ({ navigate }) => {
     const [luggagePhotos, setLuggagePhotos] = useState<File[]>([]);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [vehicleType, setVehicleType] = useState<string | null>(null);
+
+    const vehicleTypes = {
+        'Business Class': { name: 'Business Class', icon: <CarIcon/>, baseRate: 150 },
+        'Economy Class': { name: 'Economy Class', icon: <CarIcon/>, baseRate: 80 },
+        'Ordinary Class': { name: 'Ordinary Class', icon: <CarIcon/>, baseRate: 50 },
+    };
 
     const handleFileSelect = (files: FileList | null) => {
         if (!files) return;
@@ -872,6 +879,18 @@ const TripDetailsInputScreen: React.FC<NavigationProps> = ({ navigate }) => {
         <ScreenContainer>
             <Header title="Instant Ride" onBack={() => navigate('ServiceSelection')} />
             <div className="p-4 space-y-4">
+                <div>
+                    <h3 className="block text-sm font-medium text-gray-700 mb-2">Select Vehicle Type</h3>
+                    <div className="grid grid-cols-3 gap-2">
+                        {Object.values(vehicleTypes).map(v => (
+                            <button key={v.name} onClick={() => setVehicleType(v.name)} className={`p-3 border rounded-lg text-center transition-colors ${vehicleType === v.name ? 'bg-primary text-white border-primary' : 'bg-gray-50 hover:bg-gray-100'}`}>
+                                {React.cloneElement(v.icon, {className: 'w-8 h-8 mx-auto mb-1'})}
+                                <span className="text-sm font-semibold">{v.name}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
                 <Input id="pickup" label="Pickup Location" type="text" placeholder="Kotoka International Airport" defaultValue="Kotoka Int'l Airport, Terminal 3" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
                 <Input id="destination" label="Destination" type="text" placeholder="Enter your destination" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
                 <Input id="passengers" label="Passengers" type="number" placeholder="1" icon={<UsersIcon className="w-5 h-5 text-gray-400" />} />
@@ -958,6 +977,13 @@ const ScheduleRideScreen: React.FC<NavigationProps> = ({ navigate }) => {
     const [luggagePhotos, setLuggagePhotos] = useState<File[]>([]);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [vehicleType, setVehicleType] = useState<string | null>(null);
+
+    const vehicleTypes = {
+        'Business Class': { name: 'Business Class', icon: <CarIcon/>, baseRate: 150 },
+        'Economy Class': { name: 'Economy Class', icon: <CarIcon/>, baseRate: 80 },
+        'Ordinary Class': { name: 'Ordinary Class', icon: <CarIcon/>, baseRate: 50 },
+    };
 
     const handleFileSelect = (files: FileList | null) => {
         if (!files) return;
@@ -992,6 +1018,17 @@ const ScheduleRideScreen: React.FC<NavigationProps> = ({ navigate }) => {
     <ScreenContainer>
         <Header title="Schedule Ride" onBack={() => navigate('ServiceSelection')} />
         <div className="p-4 space-y-4">
+            <div>
+                <h3 className="block text-sm font-medium text-gray-700 mb-2">Select Vehicle Type</h3>
+                <div className="grid grid-cols-3 gap-2">
+                    {Object.values(vehicleTypes).map(v => (
+                        <button key={v.name} onClick={() => setVehicleType(v.name)} className={`p-3 border rounded-lg text-center transition-colors ${vehicleType === v.name ? 'bg-primary text-white border-primary' : 'bg-gray-50 hover:bg-gray-100'}`}>
+                            {React.cloneElement(v.icon, {className: 'w-8 h-8 mx-auto mb-1'})}
+                            <span className="text-sm font-semibold">{v.name}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
             <Input id="date" label="Date" type="date" icon={<CalendarIcon className="w-5 h-5 text-gray-400" />} />
             <Input id="time" label="Time" type="time" icon={<CalendarIcon className="w-5 h-5 text-gray-400" />} />
             <Input id="pickup" label="Pickup Location" type="text" placeholder="Kotoka International Airport" defaultValue="Kotoka Int'l Airport, Terminal 3" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
