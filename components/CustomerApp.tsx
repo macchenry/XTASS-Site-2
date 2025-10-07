@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
@@ -17,9 +18,15 @@ interface Car {
   description: string;
 }
 
+// Define Vehicle Class Info type
+interface VehicleClassInfo {
+    name: string;
+    baseRate: number;
+}
+
 function usePrevious(value: Screen): Screen | undefined {
-    // FIX: Explicitly type the ref to hold `Screen` or `undefined` to satisfy stricter type checking.
-    const ref = useRef<Screen | undefined>();
+    // FIX: The `useRef` hook requires an initial value. It is initialized here with `undefined`.
+    const ref = useRef<Screen | undefined>(undefined);
     useEffect(() => {
         ref.current = value;
     }, [value]);
@@ -31,7 +38,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
   const [otpOrigin, setOtpOrigin] = useState<Screen>('Register');
   const [phoneForOTP, setPhoneForOTP] = useState({ phone: '241234567', code: '+233' });
   const [selectedCar, setSelectedCar] = useState<Car | null>(null);
-  const [selectedVehicleType, setSelectedVehicleType] = useState<string>('Economy Class');
+  const [selectedVehicleClassInfo, setSelectedVehicleClassInfo] = useState<VehicleClassInfo>({ name: 'Economy Class', baseRate: 80 });
   const previousScreen = usePrevious(screen);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -81,9 +88,9 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
       case 'ScheduleRide':
           return <ScheduleRideScreen navigate={navigate} />;
       case 'CarRental':
-          return <CarRentalScreen navigate={navigate} setVehicleTypeForFilter={setSelectedVehicleType} />;
+          return <CarRentalScreen navigate={navigate} setVehicleTypeForFilter={setSelectedVehicleClassInfo} />;
       case 'AvailableCarsForRent':
-          return <AvailableCarsForRentScreen navigate={navigate} onBack={() => navigate('CarRental')} onCarSelect={setSelectedCar} selectedClass={selectedVehicleType} />;
+          return <AvailableCarsForRentScreen navigate={navigate} onBack={() => navigate('CarRental')} onCarSelect={setSelectedCar} selectedClassInfo={selectedVehicleClassInfo} />;
       case 'CarRentDetails':
           return <CarRentDetailsScreen navigate={navigate} car={selectedCar} onBack={() => navigate('AvailableCarsForRent')} />;
       case 'CompatibleShuttlesList':
@@ -1065,7 +1072,7 @@ const ScheduleRideScreen: React.FC<NavigationProps> = ({ navigate }) => {
     )
 };
 
-const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (type: string) => void }> = ({ navigate, setVehicleTypeForFilter }) => {
+const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (info: VehicleClassInfo) => void }> = ({ navigate, setVehicleTypeForFilter }) => {
     const [vehicleType, setVehicleType] = useState('Economy Class');
     const [pickupDateTime, setPickupDateTime] = useState('');
     const [returnDateTime, setReturnDateTime] = useState('');
@@ -1144,7 +1151,8 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (ty
                 {/* Action Button */}
                 <div className="pt-2">
                     <Button onClick={() => {
-                        setVehicleTypeForFilter(vehicleType);
+                        const selectedVehicle = vehicleTypes[vehicleType as keyof typeof vehicleTypes];
+                        setVehicleTypeForFilter({ name: selectedVehicle.name, baseRate: selectedVehicle.baseRate });
                         navigate('AvailableCarsForRent');
                     }} className="hover:animate-pulse">Continue</Button>
                 </div>
@@ -1153,16 +1161,17 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (ty
     );
 };
 
-const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => void; onCarSelect: (car: Car) => void; selectedClass: string; }> = ({ navigate, onBack, onCarSelect, selectedClass }) => {
+const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => void; onCarSelect: (car: Car) => void; selectedClassInfo: VehicleClassInfo; }> = ({ navigate, onBack, onCarSelect, selectedClassInfo }) => {
     const cars: Car[] = [
-        { class: 'Economy Class', driver: 'John Doe', price: 50.00, seed: 'car1', description: 'Comfortable 4-seater with air conditioning and GPS tracking.' },
-        { class: 'Business Class', driver: 'Jane Smith', price: 85.00, seed: 'car2', description: 'Luxury sedan with premium features for a first-class experience.' },
-        { class: 'Ordinary Class', driver: 'Kwame Nkrumah', price: 48.00, seed: 'car3', description: 'A reliable and affordable option for everyday travel.' },
-        { class: 'Business Class', driver: 'Adwoa Williams', price: 90.00, seed: 'car4', description: 'Spacious and elegant for your business needs.' },
+        { class: 'Economy Class', driver: 'John Doe', price: 50.00, seed: 'car1', description: 'Comfortable 4-seater with A/C.' },
+        { class: 'Business Class', driver: 'Jane Smith', price: 85.00, seed: 'car2', description: 'Luxury sedan with premium features.' },
+        { class: 'Ordinary Class', driver: 'Kwame Nkrumah', price: 48.00, seed: 'car3', description: 'A reliable and affordable option.' },
+        { class: 'Business Class', driver: 'Adwoa Williams', price: 90.00, seed: 'car4', description: 'Spacious and elegant for business.' },
         { class: 'Economy Class', driver: 'Kojo Antwi', price: 55.00, seed: 'car5', description: 'Fuel-efficient and easy to park.' },
+        { class: 'Economy Class', driver: 'Abena Yeboah', price: 52.00, seed: 'car6', description: 'Modern compact, great for city driving.' },
     ];
 
-    const filteredCars = cars.filter(car => car.class === selectedClass);
+    const filteredCars = cars.filter(car => car.class === selectedClassInfo.name);
 
     const handleSelect = (car: Car) => {
         onCarSelect(car);
@@ -1172,28 +1181,31 @@ const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => voi
     return (
         <ScreenContainer>
             <Header title="Cars for Rent" onBack={onBack} />
-            <div className="p-4 space-y-3">
+             <div className="p-4 bg-gray-50 border-b border-gray-200">
+                <h2 className="text-xl font-bold font-display text-primary">{selectedClassInfo.name}</h2>
+                <p className="text-md font-semibold text-gray-700">Base Rate: ${selectedClassInfo.baseRate.toFixed(2)}<span className="text-sm font-normal text-gray-500">/day</span></p>
+            </div>
+            <div className="p-4">
                 {filteredCars.length > 0 ? (
-                    filteredCars.map((car, i) => (
-                        <div 
-                            key={i} 
-                            onClick={() => handleSelect(car)} 
-                            className="relative bg-white p-4 rounded-lg shadow-md border border-gray-200 flex items-center space-x-4 transition-all cursor-pointer hover:shadow-lg"
-                        >
-                            <img src={`https://picsum.photos/seed/${car.seed}/80/80`} alt="car" className="w-20 h-20 rounded-md object-cover" />
-                            <div className="flex-1">
-                                <h4 className="font-bold text-lg text-gray-800">{car.class}</h4>
-                                <p className="text-sm text-gray-500 mt-1">Driver: {car.driver}</p>
+                     <div className="grid grid-cols-2 gap-4">
+                        {filteredCars.map((car, i) => (
+                            <div 
+                                key={i} 
+                                onClick={() => handleSelect(car)} 
+                                className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-xl transition-shadow group"
+                            >
+                                <img src={`https://picsum.photos/seed/${car.seed}/200/150`} alt="car" className="w-full h-32 object-cover" />
+                                <div className="p-3">
+                                    <p className="text-sm text-gray-600 truncate group-hover:text-primary">{car.description}</p>
+                                </div>
                             </div>
-                            <div className="text-right">
-                                <p className="text-sm text-gray-500">Base Rate:</p>
-                                <p className="text-lg font-bold text-primary">${car.price.toFixed(2)}<span className="text-sm font-normal text-gray-500">/day</span></p>
-                            </div>
-                        </div>
-                    ))
+                        ))}
+                    </div>
                 ) : (
-                    <div className="text-center p-8 text-gray-500">
-                        <p>No cars available for the selected class.</p>
+                    <div className="text-center py-16 text-gray-500">
+                        <CarIcon className="w-16 h-16 mx-auto text-gray-300" />
+                        <p className="mt-2 font-semibold">No cars available</p>
+                        <p className="text-sm">Please try a different vehicle class.</p>
                     </div>
                 )}
             </div>
