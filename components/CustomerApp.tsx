@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
@@ -37,7 +36,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
   const [otpOrigin, setOtpOrigin] = useState<Screen>('Register');
   const [phoneForOTP, setPhoneForOTP] = useState({ phone: '241234567', code: '+233' });
   const [selectedCar, setSelectedCar] = useState<Car | null>(null);
-  const [selectedVehicleClassInfo, setSelectedVehicleClassInfo] = useState<VehicleClassInfo>({ name: 'Economy Class', baseRate: 80 });
+  const [selectedVehicleClassInfo, setSelectedVehicleClassInfo] = useState<VehicleClassInfo | null>(null);
   const [rentalDuration, setRentalDuration] = useState(0);
   const [currentFlow, setCurrentFlow] = useState<'shuttle' | 'rental' | null>(null);
   const previousScreen = usePrevious(screen);
@@ -1074,7 +1073,7 @@ const ScheduleRideScreen: React.FC<NavigationProps> = ({ navigate }) => {
     )
 };
 
-const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (info: VehicleClassInfo) => void; setRentalDuration: (duration: number) => void; }> = ({ navigate, setVehicleTypeForFilter, setRentalDuration }) => {
+const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (info: VehicleClassInfo | null) => void; setRentalDuration: (duration: number) => void; }> = ({ navigate, setVehicleTypeForFilter, setRentalDuration }) => {
     const [vehicleType, setVehicleType] = useState<string | null>(null);
     const [pickupDateTime, setPickupDateTime] = useState('');
     const [returnDateTime, setReturnDateTime] = useState('');
@@ -1202,7 +1201,7 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
     );
 };
 
-const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => void; onCarSelect: (car: Car) => void; selectedClassInfo: VehicleClassInfo; }> = ({ navigate, onBack, onCarSelect, selectedClassInfo }) => {
+const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => void; onCarSelect: (car: Car) => void; selectedClassInfo: VehicleClassInfo | null; }> = ({ navigate, onBack, onCarSelect, selectedClassInfo }) => {
     const cars: Car[] = [
         { class: 'Economy Class', driver: 'John Doe', price: 80.00, seed: 'car1', description: 'Comfortable 4-seater with A/C.' },
         { class: 'Business Class', driver: 'Jane Smith', price: 150.00, seed: 'car2', description: 'Luxury sedan with premium features.' },
@@ -1211,6 +1210,16 @@ const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => voi
         { class: 'Economy Class', driver: 'Kojo Antwi', price: 85.00, seed: 'car5', description: 'Fuel-efficient and easy to park.' },
         { class: 'Economy Class', driver: 'Abena Yeboah', price: 82.00, seed: 'car6', description: 'Modern compact, great for city driving.' },
     ];
+    
+    useEffect(() => {
+        if (!selectedClassInfo) {
+            onBack();
+        }
+    }, [selectedClassInfo, onBack]);
+
+    if (!selectedClassInfo) {
+        return null; // or a loading spinner, or redirect immediately
+    }
 
     const filteredCars = cars.filter(car => car.class === selectedClassInfo.name);
 
@@ -1333,10 +1342,13 @@ const CarRentDetailsScreen: React.FC<NavigationProps & { car: Car | null; onBack
 
 const CompatibleShuttlesListScreen: React.FC<NavigationProps & { onBack: () => void }> = ({ navigate, onBack }) => {
     const shuttles = [
-        { class: 'Economy Shuttle', driver: 'Kofi Mensah', price: 100.00, distance: 50, seed: 'shuttle1' },
-        { class: 'Business Shuttle', driver: 'Ama Serwaa', price: 180.00, distance: 75, seed: 'shuttle2' },
-        { class: 'Ordinary Shuttle', driver: 'Yaw Boateng', price: 120.00, distance: 60, seed: 'shuttle3' },
+        { class: 'Economy Shuttle', name: 'Toyota Hiace', driver: 'Kofi Mensah', price: 100.00, distance: 50, seed: 'shuttle1' },
+        { class: 'Business Shuttle', name: 'Hyundai H1', driver: 'Ama Serwaa', price: 180.00, distance: 75, seed: 'shuttle2' },
+        { class: 'Ordinary Shuttle', name: 'Mercedes Sprinter', driver: 'Yaw Boateng', price: 120.00, distance: 60, seed: 'shuttle3' },
     ];
+
+    // Find the cheapest shuttle to display its info in the header as a feature
+    const featuredShuttle = [...shuttles].sort((a, b) => a.price - b.price)[0];
 
     return (
         <ScreenContainer>
@@ -1350,24 +1362,33 @@ const CompatibleShuttlesListScreen: React.FC<NavigationProps & { onBack: () => v
                     <div className="w-8"></div>
                 </div>
             </header>
-            <div className="p-4 space-y-3">
-                {shuttles.map((shuttle, i) => (
-                    <div 
-                        key={i} 
-                        onClick={() => navigate('ShuttleDriverDetails')} 
-                        className="relative bg-white p-4 rounded-lg shadow-md border border-gray-200 flex items-center space-x-4 transition-all cursor-pointer hover:shadow-lg"
-                    >
-                        <img src={`https://picsum.photos/seed/${shuttle.seed}/80/80`} alt="shuttle" className="w-20 h-20 rounded-md object-cover" />
-                        <div className="flex-1">
-                            <h4 className="font-bold text-lg text-gray-800">{shuttle.class}</h4>
-                            <p className="text-sm text-gray-500 mt-1">Driver: {shuttle.driver}</p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-sm text-gray-500">Base Rate:</p>
-                            <p className="text-lg font-bold text-[#660032]">${shuttle.price.toFixed(2)}<span className="text-sm font-normal text-gray-500">/{shuttle.distance}km</span></p>
-                        </div>
+            <div className="p-4 bg-gray-50 border-b border-gray-200">
+                <h2 className="text-xl font-bold font-display text-primary">{featuredShuttle.class}</h2>
+                <p className="text-md font-semibold text-gray-700">Base Rate: ${featuredShuttle.price.toFixed(2)}<span className="text-sm font-normal text-gray-500">/{featuredShuttle.distance}km</span></p>
+            </div>
+            <div className="p-4">
+                {shuttles.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-4">
+                        {shuttles.map((shuttle, i) => (
+                            <div 
+                                key={i} 
+                                onClick={() => navigate('ShuttleDriverDetails')} 
+                                className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-xl transition-shadow group"
+                            >
+                                <img src={`https://picsum.photos/seed/${shuttle.seed}/200/150`} alt="shuttle" className="w-full h-32 object-cover" />
+                                <div className="p-3">
+                                    <p className="text-md font-semibold text-gray-800 truncate group-hover:text-primary">{shuttle.name}</p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                ))}
+                ) : (
+                    <div className="text-center py-16 text-gray-500">
+                        <BusIcon className="w-16 h-16 mx-auto text-gray-300" />
+                        <p className="mt-2 font-semibold">No shuttles available</p>
+                        <p className="text-sm">Please try adjusting your search.</p>
+                    </div>
+                )}
             </div>
         </ScreenContainer>
     );
