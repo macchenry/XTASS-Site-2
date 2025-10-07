@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
@@ -40,6 +39,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
   const [selectedCar, setSelectedCar] = useState<Car | null>(null);
   const [selectedVehicleClassInfo, setSelectedVehicleClassInfo] = useState<VehicleClassInfo>({ name: 'Economy Class', baseRate: 80 });
   const [rentalDuration, setRentalDuration] = useState(0);
+  const [currentFlow, setCurrentFlow] = useState<'shuttle' | 'rental' | null>(null);
   const previousScreen = usePrevious(screen);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -83,7 +83,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
       case 'PostLoginVerification':
           return <PostLoginVerificationScreen navigate={navigate} logout={logout} />;
       case 'ServiceSelection':
-          return <ServiceSelectionScreen navigate={navigate} logout={logout} />;
+          return <ServiceSelectionScreen navigate={navigate} logout={logout} setFlow={setCurrentFlow} />;
       case 'TripDetailsInput':
           return <TripDetailsInputScreen navigate={navigate} />;
       case 'ScheduleRide':
@@ -102,13 +102,14 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
       case 'BookingConfirmation':
           return <BookingConfirmationScreen navigate={navigate} />;
       case 'PaymentSelection':
-          return <PaymentSelectionScreen navigate={navigate} />;
+          const paymentBackTarget = previousScreen === 'CarRentDetails' ? 'CarRentDetails' : 'BookingConfirmation';
+          return <PaymentSelectionScreen navigate={navigate} onBack={() => navigate(paymentBackTarget)} />;
       case 'PaymentProcessing':
-          return <PaymentProcessingScreen navigate={navigate} showToast={showToast} />;
+          return <PaymentProcessingScreen navigate={navigate} showToast={showToast} flow={currentFlow} />;
       case 'TripTracking':
           return <TripTrackingScreen navigate={navigate} />;
       case 'TripCompletionReceipt':
-          return <TripCompletionReceiptScreen navigate={navigate} />;
+          return <TripCompletionReceiptScreen navigate={navigate} flow={currentFlow} car={selectedCar} duration={rentalDuration} />;
       case 'TripHistory':
           return <TripHistoryScreen navigate={navigate} />;
       case 'TripDetailsView':
@@ -811,19 +812,19 @@ const PostLoginVerificationScreen: React.FC<NavigationProps> = ({ navigate, logo
 };
 
 
-const ServiceSelectionScreen: React.FC<NavigationProps> = ({ navigate, logout }) => (
+const ServiceSelectionScreen: React.FC<NavigationProps & { setFlow: (flow: 'shuttle' | 'rental') => void }> = ({ navigate, logout, setFlow }) => (
     <ScreenContainer>
         <Header title="Book a Ride" onBack={logout} />
         <div className="p-4 space-y-4">
-            <div onClick={() => navigate('TripDetailsInput')} className="bg-primary text-white p-6 rounded-lg shadow-lg cursor-pointer hover:bg-primary-hover transition-colors">
+            <div onClick={() => { setFlow('shuttle'); navigate('TripDetailsInput'); }} className="bg-primary text-white p-6 rounded-lg shadow-lg cursor-pointer hover:bg-primary-hover transition-colors">
                 <h3 className="text-2xl font-display font-bold">Instant Ride</h3>
                 <p className="mt-1">Book the next available shuttle.</p>
             </div>
-            <div onClick={() => navigate('ScheduleRide')} className="bg-accent text-[#660032] p-6 rounded-lg shadow-lg cursor-pointer hover:bg-yellow-400 transition-colors">
+            <div onClick={() => { setFlow('shuttle'); navigate('ScheduleRide'); }} className="bg-accent text-[#660032] p-6 rounded-lg shadow-lg cursor-pointer hover:bg-yellow-400 transition-colors">
                  <h3 className="text-2xl font-display font-bold">Schedule Ride</h3>
                 <p className="mt-1">Plan your trip in advance.</p>
             </div>
-            <div onClick={() => navigate('CarRental')} style={{backgroundColor: '#660032'}} className="text-white p-6 rounded-lg shadow-lg cursor-pointer hover:bg-opacity-90 transition-all">
+            <div onClick={() => { setFlow('rental'); navigate('CarRental'); }} style={{backgroundColor: '#660032'}} className="text-white p-6 rounded-lg shadow-lg cursor-pointer hover:bg-opacity-90 transition-all">
                 <h3 className="text-2xl font-display font-bold">Car Rental</h3>
                 <p className="mt-1">Your personal ride for the day.</p>
             </div>
@@ -1310,7 +1311,7 @@ const CarRentDetailsScreen: React.FC<NavigationProps & { car: Car | null; onBack
 
                 {/* Action Button */}
                  <div className="p-4 mt-2">
-                    <Button onClick={() => navigate('BookingConfirmation')}>Book Car Now</Button>
+                    <Button onClick={() => navigate('PaymentSelection')}>Book Car Now</Button>
                 </div>
             </div>
         </ScreenContainer>
@@ -1411,9 +1412,9 @@ const BookingConfirmationScreen: React.FC<NavigationProps> = ({ navigate }) => (
     </ScreenContainer>
 );
 
-const PaymentSelectionScreen: React.FC<NavigationProps> = ({ navigate }) => (
+const PaymentSelectionScreen: React.FC<NavigationProps & { onBack: () => void }> = ({ navigate, onBack }) => (
     <ScreenContainer>
-        <Header title="Select Payment" onBack={() => navigate('BookingConfirmation')} />
+        <Header title="Select Payment" onBack={onBack} />
         <div className="p-4 space-y-4">
             <div onClick={() => navigate('PaymentProcessing')} className="p-4 border rounded-lg flex items-center justify-between cursor-pointer hover:border-primary">
                 <span className="font-semibold">Mobile Money</span>
@@ -1427,15 +1428,19 @@ const PaymentSelectionScreen: React.FC<NavigationProps> = ({ navigate }) => (
     </ScreenContainer>
 );
 
-const PaymentProcessingScreen: React.FC<NavigationProps & { showToast: (msg: string, type?: 'success' | 'error') => void }> = ({ navigate, showToast }) => {
+const PaymentProcessingScreen: React.FC<NavigationProps & { showToast: (msg: string, type?: 'success' | 'error') => void; flow: 'shuttle' | 'rental' | null; }> = ({ navigate, showToast, flow }) => {
     React.useEffect(() => {
         const timer = setTimeout(() => {
             showToast("Payment Successful!");
-            navigate('TripTracking');
+            if (flow === 'rental') {
+                navigate('TripCompletionReceipt');
+            } else {
+                navigate('TripTracking');
+            }
         }, 3000);
         return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [flow, navigate, showToast]);
 
     return (
         <ScreenContainer>
@@ -1476,28 +1481,42 @@ const TripTrackingScreen: React.FC<NavigationProps> = ({ navigate }) => (
     </ScreenContainer>
 );
 
-const TripCompletionReceiptScreen: React.FC<NavigationProps> = ({ navigate }) => (
-    <ScreenContainer>
-        <Header title="Trip Completed" onBack={() => navigate('ServiceSelection')} />
-        <div className="p-4 text-center">
-            <CheckCircleIcon className="w-24 h-24 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold font-display">Thank You!</h2>
-            <p className="text-lg text-gray-600">Your trip to Accra Mall is complete.</p>
-            <div className="bg-gray-50 p-4 rounded-lg my-6 text-left">
-                <h3 className="font-bold text-lg mb-2">Receipt</h3>
-                <div className="flex justify-between"><span>Base Fare</span><span>$10.00</span></div>
-                <div className="flex justify-between font-bold text-lg mt-2 pt-2 border-t"><span>Total Paid</span><span>$10.00</span></div>
-            </div>
-            <div className="my-6">
-                <h3 className="font-bold text-lg mb-2">Rate Your Driver</h3>
-                <div className="flex justify-center text-4xl text-gray-300 space-x-2">
-                    {[...Array(5)].map((_, i) => <button key={i} className="hover:text-yellow-400">★</button>)}
+const TripCompletionReceiptScreen: React.FC<NavigationProps & { flow: 'shuttle' | 'rental' | null; car: Car | null; duration: number }> = ({ navigate, flow, car, duration }) => {
+    const isRental = flow === 'rental' && car && duration > 0;
+    const total = isRental ? car.price * duration : 10.00;
+    
+    return (
+        <ScreenContainer>
+            <Header title={isRental ? "Booking Confirmed" : "Trip Completed"} onBack={() => navigate('ServiceSelection')} />
+            <div className="p-4 text-center">
+                <CheckCircleIcon className="w-24 h-24 text-green-500 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold font-display">Thank You!</h2>
+                <p className="text-lg text-gray-600">{isRental ? 'Your car rental is confirmed.' : 'Your trip to Accra Mall is complete.'}</p>
+                <div className="bg-gray-50 p-4 rounded-lg my-6 text-left">
+                    <h3 className="font-bold text-lg mb-2">Receipt</h3>
+                    {isRental ? (
+                        <>
+                            <div className="flex justify-between"><span>Daily Rate</span><span>${car.price.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Duration</span><span>{duration} Day{duration > 1 ? 's' : ''}</span></div>
+                        </>
+                    ) : (
+                        <div className="flex justify-between"><span>Base Fare</span><span>$10.00</span></div>
+                    )}
+                    <div className="flex justify-between font-bold text-lg mt-2 pt-2 border-t"><span>Total Paid</span><span>${total.toFixed(2)}</span></div>
                 </div>
+                {!isRental && (
+                    <div className="my-6">
+                        <h3 className="font-bold text-lg mb-2">Rate Your Driver</h3>
+                        <div className="flex justify-center text-4xl text-gray-300 space-x-2">
+                            {[...Array(5)].map((_, i) => <button key={i} className="hover:text-yellow-400">★</button>)}
+                        </div>
+                    </div>
+                )}
+                <Button onClick={() => navigate('ServiceSelection')}>Back to Home</Button>
             </div>
-            <Button onClick={() => navigate('ServiceSelection')}>Back to Home</Button>
-        </div>
-    </ScreenContainer>
-);
+        </ScreenContainer>
+    );
+};
 
 const TripHistoryScreen: React.FC<NavigationProps> = ({ navigate }) => {
     // FIX: Typed icon as React.ReactElement to allow cloning with props and resolve the JSX namespace error.
