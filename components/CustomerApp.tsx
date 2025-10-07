@@ -1168,25 +1168,47 @@ const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => voi
     );
 };
 
-const CompatibleShuttlesListScreen: React.FC<NavigationProps & { onBack: () => void }> = ({ navigate, onBack }) => (
-    <ScreenContainer>
-        <Header title="Available Shuttles" onBack={onBack} />
-        <div className="p-4 space-y-3">
-            {[1, 2, 3].map(i => (
-                <div key={i} onClick={() => navigate('ShuttleDriverDetails')} className="bg-white p-4 rounded-lg shadow-md border border-gray-200 flex items-center space-x-4 cursor-pointer hover:shadow-lg transition-shadow">
-                    <img src={`https://picsum.photos/seed/${i}/80/80`} alt="shuttle" className="w-20 h-20 rounded-md object-cover" />
-                    <div className="flex-1">
-                        <div className="flex items-center">
-                            <BusIcon className="w-6 h-6 text-primary mr-2" />
-                            <h4 className="font-bold text-lg text-gray-800">Economy Shuttle</h4>
-                        </div>
-                        <p className="text-gray-600 mt-1">Driver: Kofi Mensah</p>
-                    </div>
+const CompatibleShuttlesListScreen: React.FC<NavigationProps & { onBack: () => void }> = ({ navigate, onBack }) => {
+    const shuttles = [
+        { class: 'Economy Shuttle', driver: 'Kofi Mensah', price: 100.00, seed: 'shuttle1' },
+        { class: 'Business Shuttle', driver: 'Ama Serwaa', price: 180.00, seed: 'shuttle2' },
+        { class: 'Standard Shuttle', driver: 'Yaw Boateng', price: 120.00, seed: 'shuttle3' },
+    ];
+
+    return (
+        <ScreenContainer>
+            {/* Custom Header with specific title color */}
+            <header className="bg-white shadow-md sticky top-0 z-10">
+                <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+                    <button onClick={onBack} className="text-primary p-2 -ml-2">
+                        <ChevronLeftIcon className="w-6 h-6" />
+                    </button>
+                    <h1 className="text-xl font-display font-bold text-[#660032] text-center">Available Shuttles</h1>
+                    <div className="w-8"></div>
                 </div>
-            ))}
-        </div>
-    </ScreenContainer>
-);
+            </header>
+            <div className="p-4 space-y-3">
+                {shuttles.map((shuttle, i) => (
+                    <div 
+                        key={i} 
+                        onClick={() => navigate('ShuttleDriverDetails')} 
+                        className="relative bg-white p-4 rounded-lg shadow-md border border-gray-200 flex items-center space-x-4 transition-all cursor-pointer hover:shadow-lg"
+                    >
+                        <img src={`https://picsum.photos/seed/${shuttle.seed}/80/80`} alt="shuttle" className="w-20 h-20 rounded-md object-cover" />
+                        <div className="flex-1">
+                            <h4 className="font-bold text-lg text-gray-800">{shuttle.class}</h4>
+                            <p className="text-sm text-gray-500 mt-1">Driver: {shuttle.driver}</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-sm text-gray-500">Base Rate:</p>
+                            <p className="text-lg font-bold text-[#660032]">GHS {shuttle.price.toFixed(2)}<span className="text-sm font-normal text-gray-500">/day</span></p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </ScreenContainer>
+    );
+};
 
 const ShuttleDriverDetailsScreen: React.FC<NavigationProps> = ({ navigate }) => (
     <ScreenContainer>
