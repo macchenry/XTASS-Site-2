@@ -1214,7 +1214,7 @@ const ShuttleDriverDetailsScreen: React.FC<NavigationProps> = ({ navigate }) => 
     <ScreenContainer>
         <Header title="Shuttle Details" onBack={() => navigate('CompatibleShuttlesList')} />
         <div className="p-4">
-            <img src="https://picsum.photos/seed/1/400/200" alt="shuttle" className="w-full h-48 rounded-lg object-cover mb-4" />
+            <img src="https://images.unsplash.com/photo-1544652478-6653e09f18a2?w=400&h=200&fit=crop&q=80" alt="Passenger with her luggage at the airport" className="w-full h-48 rounded-lg object-cover mb-4" />
             <h3 className="text-2xl font-bold font-display">Toyota Hiace - GT-1234-20</h3>
             <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                 <h4 className="font-bold text-lg mb-2">Driver: Kofi Mensah</h4>
