@@ -1,10 +1,19 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
-import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon, ShieldIcon, GoogleIcon, UploadCloudIcon, CarIcon, BabyIcon, BusIcon } from './Icons';
+import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon, ShieldIcon, GoogleIcon, UploadCloudIcon, CarIcon, BabyIcon, BusIcon, SnowflakeIcon } from './Icons';
 
 interface CustomerAppProps extends NavigationProps {
   screen: Screen;
+}
+
+// Define the Car type for better type safety
+interface Car {
+  class: string;
+  driver: string;
+  price: number;
+  seed: string;
+  description: string;
 }
 
 function usePrevious(value: Screen): Screen | undefined {
@@ -19,6 +28,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   const [otpOrigin, setOtpOrigin] = useState<Screen>('Register');
   const [phoneForOTP, setPhoneForOTP] = useState({ phone: '241234567', code: '+233' });
+  const [selectedCar, setSelectedCar] = useState<Car | null>(null);
   const previousScreen = usePrevious(screen);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -70,7 +80,9 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
       case 'CarRental':
           return <CarRentalScreen navigate={navigate} />;
       case 'AvailableCarsForRent':
-          return <AvailableCarsForRentScreen navigate={navigate} onBack={() => navigate('CarRental')} />;
+          return <AvailableCarsForRentScreen navigate={navigate} onBack={() => navigate('CarRental')} onCarSelect={setSelectedCar}/>;
+      case 'CarRentDetails':
+          return <CarRentDetailsScreen navigate={navigate} car={selectedCar} onBack={() => navigate('AvailableCarsForRent')} />;
       case 'CompatibleShuttlesList':
           const backTarget = previousScreen === 'ScheduleRide' ? 'ScheduleRide' : 'TripDetailsInput';
           return <CompatibleShuttlesListScreen navigate={navigate} onBack={() => navigate(backTarget)} />;
@@ -1135,12 +1147,17 @@ const CarRentalScreen: React.FC<NavigationProps> = ({ navigate }) => {
     );
 };
 
-const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => void }> = ({ navigate, onBack }) => {
-    const cars = [
-        { class: 'Economy Class', driver: 'John Doe', price: 50.00, seed: 'car1' },
-        { class: 'Business Class', driver: 'Jane Smith', price: 85.00, seed: 'car2' },
-        { class: 'Ordinary Class', driver: 'Kwame Nkrumah', price: 48.00, seed: 'car3' },
+const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => void; onCarSelect: (car: Car) => void }> = ({ navigate, onBack, onCarSelect }) => {
+    const cars: Car[] = [
+        { class: 'Economy Class', driver: 'John Doe', price: 50.00, seed: 'car1', description: 'Comfortable 4-seater with air conditioning and GPS tracking.' },
+        { class: 'Business Class', driver: 'Jane Smith', price: 85.00, seed: 'car2', description: 'Luxury sedan with premium features for a first-class experience.' },
+        { class: 'Ordinary Class', driver: 'Kwame Nkrumah', price: 48.00, seed: 'car3', description: 'A reliable and affordable option for everyday travel.' },
     ];
+
+    const handleSelect = (car: Car) => {
+        onCarSelect(car);
+        navigate('CarRentDetails');
+    };
 
     return (
         <ScreenContainer>
@@ -1149,7 +1166,7 @@ const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => voi
                 {cars.map((car, i) => (
                     <div 
                         key={i} 
-                        onClick={() => navigate('ShuttleDriverDetails')} 
+                        onClick={() => handleSelect(car)} 
                         className="relative bg-white p-4 rounded-lg shadow-md border border-gray-200 flex items-center space-x-4 transition-all cursor-pointer hover:shadow-lg"
                     >
                         <img src={`https://picsum.photos/seed/${car.seed}/80/80`} alt="car" className="w-20 h-20 rounded-md object-cover" />
@@ -1167,6 +1184,75 @@ const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => voi
         </ScreenContainer>
     );
 };
+
+const CarRentDetailsScreen: React.FC<NavigationProps & { car: Car | null; onBack: () => void; }> = ({ navigate, car, onBack }) => {
+    if (!car) {
+        useEffect(() => {
+            onBack();
+        }, [onBack]);
+        return null;
+    }
+
+    const features = [
+        { name: "Air Conditioning", icon: <SnowflakeIcon className="w-6 h-6 text-primary"/> },
+        { name: "GPS Tracking", icon: <MapPinIcon className="w-6 h-6 text-primary"/> },
+        { name: "24/7 Support", icon: <PhoneIcon className="w-6 h-6 text-primary"/> },
+        { name: "Free Cancellation", icon: <CheckCircleIcon className="w-6 h-6 text-primary"/> },
+    ];
+
+    return (
+        <ScreenContainer>
+            <Header title="Car Rent Details" onBack={onBack} />
+            <div>
+                <img src={`https://picsum.photos/seed/${car.seed}/400/200`} alt={car.class} className="w-full h-48 object-cover" />
+                
+                <div className="p-4">
+                    {/* Car Info Card */}
+                    <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200 -mt-16 relative z-10">
+                        <h3 className="text-2xl font-bold font-display text-primary">{car.class}</h3>
+                        <p className="text-md text-gray-600 mt-1">Driver: {car.driver}</p>
+                        <p className="text-lg font-semibold text-gray-800 mt-2">Base Rate: <span className="text-primary font-bold">${car.price.toFixed(2)}/day</span></p>
+                        <p className="text-sm text-gray-500 mt-2">{car.description}</p>
+                    </div>
+
+                    {/* Features Section */}
+                    <div className="mt-6">
+                        <h4 className="font-bold text-lg text-gray-800 mb-3">Features</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                            {features.map(feature => (
+                                <div key={feature.name} className="bg-gray-50 p-4 rounded-lg flex items-center space-x-3">
+                                    {feature.icon}
+                                    <span className="font-semibold text-sm text-gray-700">{feature.name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Pricing Section */}
+                    <div className="mt-6 bg-white p-4 rounded-lg shadow-md border">
+                        <h4 className="font-bold text-lg text-gray-800 mb-3">Pricing</h4>
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Base Rate:</span>
+                                <span className="font-semibold text-gray-800">${car.price.toFixed(2)}/day</span>
+                            </div>
+                             <div className="flex justify-between items-center pt-3 border-t mt-3">
+                                <span className="text-lg font-bold text-gray-800">Total Estimate:</span>
+                                <span className="text-xl font-bold text-primary">$_.__</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Action Button */}
+                 <div className="p-4 mt-2">
+                    <Button onClick={() => navigate('BookingConfirmation')}>Book Car Now</Button>
+                </div>
+            </div>
+        </ScreenContainer>
+    );
+};
+
 
 const CompatibleShuttlesListScreen: React.FC<NavigationProps & { onBack: () => void }> = ({ navigate, onBack }) => {
     const shuttles = [

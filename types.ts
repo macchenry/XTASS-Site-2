@@ -14,6 +14,7 @@ export type Screen =
   | 'ScheduleRide'
   | 'CarRental'
   | 'AvailableCarsForRent'
+  | 'CarRentDetails'
   | 'CompatibleShuttlesList'
   | 'ShuttleDriverDetails'
   | 'BookingConfirmation'
