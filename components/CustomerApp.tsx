@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
-import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon, ShieldIcon, GoogleIcon, UploadCloudIcon, CarIcon, BabyIcon, BusIcon, SnowflakeIcon } from './Icons';
+import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon, ShieldIcon, GoogleIcon, UploadCloudIcon, CarIcon, BabyIcon, BusIcon, SnowflakeIcon, FileTextIcon } from './Icons';
 
 interface CustomerAppProps extends NavigationProps {
   screen: Screen;
@@ -1010,8 +1010,21 @@ const ScheduleRideScreen: React.FC<ScheduleRideScreenProps> = ({ navigate, setVe
     const [documentType, setDocumentType] = useState('');
     const [isCaptureModalOpen, setIsCaptureModalOpen] = useState(false);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
+    const [uploadedDocument, setUploadedDocument] = useState<File | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files && event.target.files.length > 0) {
+            setUploadedDocument(event.target.files[0]);
+        }
+    };
+
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
 
     // Camera management logic
     useEffect(() => {
@@ -1114,7 +1127,10 @@ const ScheduleRideScreen: React.FC<ScheduleRideScreenProps> = ({ navigate, setVe
                 id="document-type"
                 name="document-type"
                 value={documentType}
-                onChange={(e) => setDocumentType(e.target.value)}
+                onChange={(e) => {
+                    setDocumentType(e.target.value);
+                    setUploadedDocument(null);
+                }}
                 className="mt-1 block w-full px-4 py-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
               >
                 <option value="">Select Document Type</option>
@@ -1122,6 +1138,31 @@ const ScheduleRideScreen: React.FC<ScheduleRideScreenProps> = ({ navigate, setVe
                 <option>Passport</option>
                 <option>Voter’s ID Card</option>
               </select>
+
+              {documentType && (
+                <div className="mt-2">
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    />
+                    <button
+                        type="button"
+                        onClick={handleUploadClick}
+                        className="text-primary font-medium hover:underline text-sm"
+                    >
+                        Click to Upload
+                    </button>
+                    {uploadedDocument && (
+                        <div className="mt-2 text-sm text-gray-700 bg-gray-50 p-2 rounded-md flex items-center border border-gray-200">
+                            <FileTextIcon className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0" />
+                            <span className="truncate">{uploadedDocument.name}</span>
+                        </div>
+                    )}
+                </div>
+              )}
             </div>
 
             <div>
