@@ -40,6 +40,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
   const [selectedVehicleClassInfo, setSelectedVehicleClassInfo] = useState<VehicleClassInfo | null>(null);
   const [rentalDuration, setRentalDuration] = useState(0);
   const [currentFlow, setCurrentFlow] = useState<'shuttle' | 'rental' | null>(null);
+  const [shuttleFlowOrigin, setShuttleFlowOrigin] = useState<Screen>('TripDetailsInput');
   const previousScreen = usePrevious(screen);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -85,9 +86,25 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
       case 'ServiceSelection':
           return <ServiceSelectionScreen navigate={navigate} logout={logout} setFlow={setCurrentFlow} />;
       case 'TripDetailsInput':
-          return <TripDetailsInputScreen navigate={navigate} setVehicleTypeForFilter={setSelectedVehicleClassInfo} />;
+          return <TripDetailsInputScreen 
+              navigate={(nextScreen: Screen) => {
+                  if (nextScreen === 'CompatibleShuttlesList') {
+                      setShuttleFlowOrigin('TripDetailsInput');
+                  }
+                  navigate(nextScreen);
+              }} 
+              setVehicleTypeForFilter={setSelectedVehicleClassInfo} 
+          />;
       case 'ScheduleRide':
-          return <ScheduleRideScreen navigate={navigate} setVehicleTypeForFilter={setSelectedVehicleClassInfo} />;
+          return <ScheduleRideScreen 
+              navigate={(nextScreen: Screen) => {
+                  if (nextScreen === 'CompatibleShuttlesList') {
+                      setShuttleFlowOrigin('ScheduleRide');
+                  }
+                  navigate(nextScreen);
+              }} 
+              setVehicleTypeForFilter={setSelectedVehicleClassInfo} 
+          />;
       case 'CarRental':
           return <CarRentalScreen navigate={navigate} setVehicleTypeForFilter={setSelectedVehicleClassInfo} setRentalDuration={setRentalDuration} />;
       case 'AvailableCarsForRent':
@@ -95,8 +112,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
       case 'CarRentDetails':
           return <CarRentDetailsScreen navigate={navigate} car={selectedCar} onBack={() => navigate('AvailableCarsForRent')} rentalDuration={rentalDuration} />;
       case 'CompatibleShuttlesList':
-          const backTarget = previousScreen === 'ScheduleRide' ? 'ScheduleRide' : 'TripDetailsInput';
-          return <CompatibleShuttlesListScreen navigate={navigate} onBack={() => navigate(backTarget)} selectedClassInfo={selectedVehicleClassInfo} />;
+          return <CompatibleShuttlesListScreen navigate={navigate} onBack={() => navigate(shuttleFlowOrigin)} selectedClassInfo={selectedVehicleClassInfo} />;
       case 'ShuttleDriverDetails':
           return <ShuttleDriverDetailsScreen navigate={navigate} />;
       case 'BookingConfirmation':
