@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
@@ -854,44 +853,83 @@ interface TripDetailsInputScreenProps extends NavigationProps {
 const TripDetailsInputScreen: React.FC<TripDetailsInputScreenProps> = ({ navigate, setVehicleTypeForFilter }) => {
     const [childSeat, setChildSeat] = useState(false);
     const [wheelchairAccess, setWheelchairAccess] = useState(false);
-    const [luggagePhotos, setLuggagePhotos] = useState<File[]>([]);
-    const [isDragging, setIsDragging] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const [vehicleType, setVehicleType] = useState<string | null>(null);
 
+    // State and refs for new features from Schedule Ride screen
+    const [documentType, setDocumentType] = useState('');
+    const [isCaptureModalOpen, setIsCaptureModalOpen] = useState(false);
+    const [capturedImage, setCapturedImage] = useState<string | null>(null);
+    const [uploadedDocument, setUploadedDocument] = useState<File | null>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const vehicleTypes = {
+        'Premium Class': { name: 'Premium Class', icon: <CarIcon/>, baseRate: 200 },
         'Business Class': { name: 'Business Class', icon: <CarIcon/>, baseRate: 150 },
         'Economy Class': { name: 'Economy Class', icon: <CarIcon/>, baseRate: 80 },
-        'Ordinary Class': { name: 'Ordinary Class', icon: <CarIcon/>, baseRate: 50 },
+        'Basic Class': { name: 'Basic Class', icon: <CarIcon/>, baseRate: 50 },
     };
 
-    const handleFileSelect = (files: FileList | null) => {
-        if (!files) return;
-        const newFiles = Array.from(files);
-        setLuggagePhotos(prev => [...prev, ...newFiles]);
-    };
-
-    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
-
-    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        setIsDragging(false);
-    };
-
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        setIsDragging(false);
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            handleFileSelect(e.dataTransfer.files);
-            e.dataTransfer.clearData();
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files && event.target.files.length > 0) {
+            setUploadedDocument(event.target.files[0]);
         }
     };
-    
-    const removePhoto = (indexToRemove: number) => {
-        setLuggagePhotos(prev => prev.filter((_, index) => index !== indexToRemove));
+
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    // Camera management logic
+    useEffect(() => {
+        let stream: MediaStream | null = null;
+        
+        const setupCamera = async () => {
+            if (isCaptureModalOpen && !capturedImage) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                    }
+                } catch (err) {
+                    console.error("Error accessing camera: ", err);
+                    alert("Camera access is required. Please grant permission.");
+                    setIsCaptureModalOpen(false);
+                }
+            }
+        };
+
+        setupCamera();
+
+        return () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, [isCaptureModalOpen, capturedImage]);
+
+    const handleCapture = () => {
+        if (videoRef.current && canvasRef.current) {
+            const video = videoRef.current;
+            const canvas = canvasRef.current;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            if (context) {
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const dataUrl = canvas.toDataURL('image/png');
+                setCapturedImage(dataUrl);
+
+                if (video.srcObject) {
+                    (video.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+                }
+            }
+        }
+    };
+
+    const retakePhoto = () => {
+        setCapturedImage(null);
     };
     
     return (
@@ -900,7 +938,7 @@ const TripDetailsInputScreen: React.FC<TripDetailsInputScreenProps> = ({ navigat
             <div className="p-4 space-y-4">
                 <div>
                     <h3 className="block text-sm font-medium text-gray-700 mb-2">Select Vehicle Type</h3>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-4">
                         {Object.values(vehicleTypes).map(v => (
                             <button key={v.name} onClick={() => setVehicleType(v.name)} className={`p-3 border rounded-lg text-center transition-colors ${vehicleType === v.name ? 'bg-primary text-white border-primary' : 'bg-gray-50 hover:bg-gray-100'}`}>
                                 {React.cloneElement(v.icon, {className: 'w-8 h-8 mx-auto mb-1'})}
@@ -930,56 +968,78 @@ const TripDetailsInputScreen: React.FC<TripDetailsInputScreenProps> = ({ navigat
                 </div>
 
                 <div>
-                     <label className="block text-sm font-medium text-gray-700">Upload Luggage Photo (Optional)</label>
-                     <div
-                         onDragOver={handleDragOver}
-                         onDragLeave={handleDragLeave}
-                         onDrop={handleDrop}
-                         onClick={() => fileInputRef.current?.click()}
-                         className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 ${isDragging ? 'border-primary bg-primary/10' : 'border-dashed'} rounded-md cursor-pointer transition-colors`}
-                     >
-                         <div className="space-y-1 text-center">
-                             <UploadCloudIcon className="mx-auto h-12 w-12 text-gray-400" />
-                             <div className="flex text-sm text-gray-600">
-                                 <span className="relative bg-white rounded-md font-medium text-primary hover:text-primary-hover focus-within:outline-none">
-                                     <span>Upload files</span>
-                                 </span>
-                                 <p className="pl-1">or drag and drop</p>
-                             </div>
-                             <p className="text-xs text-gray-500">JPG, PNG, HEIC</p>
-                         </div>
-                         <input
-                             ref={fileInputRef}
-                             id="file-upload"
-                             name="file-upload"
-                             type="file"
-                             className="sr-only"
-                             multiple
-                             accept="image/jpeg,image/png,image/heic,.heic"
-                             onChange={(e) => handleFileSelect(e.target.files)}
-                         />
-                     </div>
-                     {luggagePhotos.length > 0 && (
-                         <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2">
-                             {luggagePhotos.map((file, index) => (
-                                 <div key={index} className="relative group">
-                                     <img
-                                         src={URL.createObjectURL(file)}
-                                         alt={`luggage preview ${index}`}
-                                         className="h-24 w-full object-cover rounded-md"
-                                         onLoad={e => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
-                                     />
-                                     <button
-                                         onClick={() => removePhoto(index)}
-                                         className="absolute top-1 right-1 bg-red-600/75 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                                         aria-label="Remove image"
-                                     >
-                                        &#x2715;
-                                     </button>
-                                 </div>
-                             ))}
-                         </div>
-                     )}
+                  <label htmlFor="document-type" className="block text-sm font-medium text-gray-700 mb-1">
+                    Identification Document
+                  </label>
+                  <select
+                    id="document-type"
+                    name="document-type"
+                    value={documentType}
+                    onChange={(e) => {
+                        setDocumentType(e.target.value);
+                        setUploadedDocument(null);
+                    }}
+                    className="mt-1 block w-full px-4 py-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                  >
+                    <option value="">Select Document</option>
+                    <option>Ghana/National ID Card</option>
+                    <option>Passport</option>
+                    <option>Voter’s ID Card</option>
+                    <option>Driver’s License</option>
+                  </select>
+
+                  {documentType && (
+                    <div className="mt-2">
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                            className="hidden"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        />
+                        <button
+                            type="button"
+                            onClick={handleUploadClick}
+                            className="text-primary font-medium hover:underline text-sm"
+                        >
+                            Click to Upload
+                        </button>
+                        {uploadedDocument && (
+                            <div className="mt-2 text-sm text-gray-700 bg-gray-50 p-2 rounded-md flex items-center justify-between border border-gray-200">
+                                <div className="flex items-center min-w-0">
+                                    <FileTextIcon className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0" />
+                                    <span className="truncate">{uploadedDocument.name}</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setUploadedDocument(null)}
+                                    className="ml-2 flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-red-500 hover:bg-red-100 hover:text-red-700"
+                                    aria-label="Remove file"
+                                >
+                                    <span className="text-2xl leading-none">&times;</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Live Photo</label>
+                    <button
+                        type="button"
+                        onClick={() => setIsCaptureModalOpen(true)}
+                        className="w-full text-left bg-gray-50 p-3 rounded-md flex justify-between items-center hover:bg-gray-100 border"
+                    >
+                        <span className="flex items-center font-medium text-primary">
+                            <CameraIcon className="w-5 h-5 mr-2" />
+                            Click to Capture Photo
+                        </span>
+                        {capturedImage ? 
+                            <CheckCircleIcon className="w-6 h-6 text-green-500" /> : 
+                            <ArrowRightIcon className="w-5 h-5 text-gray-400" />
+                        }
+                    </button>
                 </div>
                 
                 <div className="pt-2">
@@ -994,6 +1054,31 @@ const TripDetailsInputScreen: React.FC<TripDetailsInputScreenProps> = ({ navigat
                     }}>Find A Ride</Button>
                 </div>
             </div>
+
+            <Modal
+                isOpen={isCaptureModalOpen}
+                onClose={() => setIsCaptureModalOpen(false)}
+                title="Live Photo Capture"
+            >
+                <p className="text-center text-sm text-gray-500 mb-4">Position your face clearly in the frame.</p>
+                <div className="w-full aspect-square bg-black rounded-lg overflow-hidden relative flex items-center justify-center">
+                    {!capturedImage && (
+                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover"></video>
+                    )}
+                    <canvas ref={canvasRef} className="hidden"></canvas>
+                    {capturedImage && <img src={capturedImage} alt="Captured" className="w-full h-full object-cover" />}
+                </div>
+                <div className="mt-4 flex space-x-2">
+                    {!capturedImage ? (
+                        <Button type="button" onClick={handleCapture} className="w-full">Capture</Button>
+                    ) : (
+                        <>
+                            <Button type="button" variant="secondary" onClick={retakePhoto} className="w-full">Retake</Button>
+                            <Button type="button" onClick={() => setIsCaptureModalOpen(false)} className="w-full">Confirm</Button>
+                        </>
+                    )}
+                </div>
+            </Modal>
         </ScreenContainer>
     );
 };
@@ -1263,7 +1348,17 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
     const [luggage, setLuggage] = useState('2');
     const [addons, setAddons] = useState({
         childSeat: false,
+        wheelchairAccess: false,
     });
+    
+    // State and refs for new features
+    const [documentType, setDocumentType] = useState('');
+    const [isCaptureModalOpen, setIsCaptureModalOpen] = useState(false);
+    const [capturedImage, setCapturedImage] = useState<string | null>(null);
+    const [uploadedDocument, setUploadedDocument] = useState<File | null>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         let calculatedDuration = 0;
@@ -1280,10 +1375,72 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
         setRentalDuration(calculatedDuration); // Also update parent state in real-time
     }, [pickupDateTime, returnDateTime, setRentalDuration]);
 
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files && event.target.files.length > 0) {
+            setUploadedDocument(event.target.files[0]);
+        }
+    };
+
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    // Camera management logic
+    useEffect(() => {
+        let stream: MediaStream | null = null;
+        
+        const setupCamera = async () => {
+            if (isCaptureModalOpen && !capturedImage) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                    }
+                } catch (err) {
+                    console.error("Error accessing camera: ", err);
+                    alert("Camera access is required. Please grant permission.");
+                    setIsCaptureModalOpen(false);
+                }
+            }
+        };
+
+        setupCamera();
+
+        return () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, [isCaptureModalOpen, capturedImage]);
+
+    const handleCapture = () => {
+        if (videoRef.current && canvasRef.current) {
+            const video = videoRef.current;
+            const canvas = canvasRef.current;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            if (context) {
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const dataUrl = canvas.toDataURL('image/png');
+                setCapturedImage(dataUrl);
+
+                if (video.srcObject) {
+                    (video.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+                }
+            }
+        }
+    };
+
+    const retakePhoto = () => {
+        setCapturedImage(null);
+    };
+
     const vehicleTypes = {
+        'Premium Class': { name: 'Premium Class', icon: <CarIcon/>, baseRate: 200 },
         'Business Class': { name: 'Business Class', icon: <CarIcon/>, baseRate: 150 },
         'Economy Class': { name: 'Economy Class', icon: <CarIcon/>, baseRate: 80 },
-        'Ordinary Class': { name: 'Ordinary Class', icon: <CarIcon/>, baseRate: 50 },
+        'Basic Class': { name: 'Basic Class', icon: <CarIcon/>, baseRate: 50 },
     };
     
     const toggleAddon = (addon: keyof typeof addons) => {
@@ -1307,7 +1464,7 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
                 {/* Vehicle Type Selector */}
                 <div>
                     <h3 className="block text-sm font-medium text-gray-700 mb-2">Select Vehicle Type</h3>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-4">
                         {Object.values(vehicleTypes).map(v => (
                             <button key={v.name} onClick={() => setVehicleType(v.name)} className={`p-3 border rounded-lg text-center transition-colors ${vehicleType === v.name ? 'bg-primary text-white border-primary' : 'bg-gray-50 hover:bg-gray-100'}`}>
                                 {React.cloneElement(v.icon, {className: 'w-8 h-8 mx-auto mb-1'})}
@@ -1343,23 +1500,90 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
                     <Input id="dropoff-location" label="Drop-off Location (Optional)" type="text" placeholder="e.g., Same as pick-up" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
                 </div>
                 
-                {/* Base Rate */}
-                <div>
-                    <h3 className="block text-sm font-medium text-gray-700 mb-2">Car Rental Base Rate per Day</h3>
-                    <div className="flex items-center bg-gray-50 p-3 rounded-md">
-                        <label htmlFor="base-rate" className="block text-sm text-gray-900 mr-2">Minimum Base Rate:</label>
-                        <span id="base-rate" className="font-semibold text-gray-800">
-                           {vehicleType ? `$${vehicleTypes[vehicleType as keyof typeof vehicleTypes].baseRate.toFixed(2)}` : '---'}
-                        </span>
-                    </div>
-                </div>
-
                 {/* Optional Add-ons */}
                 <div>
                     <h3 className="block text-sm font-medium text-gray-700 mb-2">Optional Add-ons</h3>
                     <div className="space-y-2 bg-gray-50 p-3 rounded-md">
                         <CheckboxOption id="child-seat" label="Child Seat" icon={<BabyIcon/>} checked={addons.childSeat} onChange={() => toggleAddon('childSeat')} />
+                        <CheckboxOption id="wheelchair-access" label="Wheelchair Access" icon={<UsersIcon/>} checked={addons.wheelchairAccess} onChange={() => toggleAddon('wheelchairAccess')} />
                     </div>
+                </div>
+
+                {/* Document Upload */}
+                 <div>
+                    <label htmlFor="document-type" className="block text-sm font-medium text-gray-700 mb-1">
+                        Identification Document
+                    </label>
+                    <select
+                        id="document-type"
+                        name="document-type"
+                        value={documentType}
+                        onChange={(e) => {
+                            setDocumentType(e.target.value);
+                            setUploadedDocument(null);
+                        }}
+                        className="mt-1 block w-full px-4 py-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                    >
+                        <option value="">Select Document</option>
+                        <option>Ghana/National ID Card</option>
+                        <option>Passport</option>
+                        <option>Voter’s ID Card</option>
+                        <option>Driver’s License</option>
+                    </select>
+
+                    {documentType && (
+                        <div className="mt-2">
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                className="hidden"
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                            />
+                            <button
+                                type="button"
+                                onClick={handleUploadClick}
+                                className="text-primary font-medium hover:underline text-sm"
+                            >
+                                Click to Upload
+                            </button>
+                            {uploadedDocument && (
+                                <div className="mt-2 text-sm text-gray-700 bg-gray-50 p-2 rounded-md flex items-center justify-between border border-gray-200">
+                                    <div className="flex items-center min-w-0">
+                                        <FileTextIcon className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0" />
+                                        <span className="truncate">{uploadedDocument.name}</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setUploadedDocument(null)}
+                                        className="ml-2 flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-red-500 hover:bg-red-100 hover:text-red-700"
+                                        aria-label="Remove file"
+                                    >
+                                        <span className="text-2xl leading-none">&times;</span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Live Photo */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Live Photo</label>
+                    <button
+                        type="button"
+                        onClick={() => setIsCaptureModalOpen(true)}
+                        className="w-full text-left bg-gray-50 p-3 rounded-md flex justify-between items-center hover:bg-gray-100 border"
+                    >
+                        <span className="flex items-center font-medium text-primary">
+                            <CameraIcon className="w-5 h-5 mr-2" />
+                            Click to Capture Photo
+                        </span>
+                        {capturedImage ? 
+                            <CheckCircleIcon className="w-6 h-6 text-green-500" /> : 
+                            <ArrowRightIcon className="w-5 h-5 text-gray-400" />
+                        }
+                    </button>
                 </div>
                 
                 {/* Action Button */}
@@ -1380,6 +1604,31 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
                     </Button>
                 </div>
             </div>
+
+            <Modal
+                isOpen={isCaptureModalOpen}
+                onClose={() => setIsCaptureModalOpen(false)}
+                title="Live Photo Capture"
+            >
+                <p className="text-center text-sm text-gray-500 mb-4">Position your face clearly in the frame.</p>
+                <div className="w-full aspect-square bg-black rounded-lg overflow-hidden relative flex items-center justify-center">
+                    {!capturedImage && (
+                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover"></video>
+                    )}
+                    <canvas ref={canvasRef} className="hidden"></canvas>
+                    {capturedImage && <img src={capturedImage} alt="Captured" className="w-full h-full object-cover" />}
+                </div>
+                <div className="mt-4 flex space-x-2">
+                    {!capturedImage ? (
+                        <Button type="button" onClick={handleCapture} className="w-full">Capture</Button>
+                    ) : (
+                        <>
+                            <Button type="button" variant="secondary" onClick={retakePhoto} className="w-full">Retake</Button>
+                            <Button type="button" onClick={() => setIsCaptureModalOpen(false)} className="w-full">Confirm</Button>
+                        </>
+                    )}
+                </div>
+            </Modal>
         </ScreenContainer>
     );
 };
