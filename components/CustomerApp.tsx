@@ -125,7 +125,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
       case 'TripTracking':
           return <TripTrackingScreen navigate={navigate} />;
       case 'TripCompletionReceipt':
-          return <TripCompletionReceiptScreen navigate={navigate} flow={currentFlow} car={selectedCar} duration={rentalDuration} />;
+          return <TripCompletionReceiptScreen navigate={navigate} flow={currentFlow} car={selectedCar} duration={rentalDuration} showToast={showToast} />;
       case 'TripHistory':
           return <TripHistoryScreen navigate={navigate} />;
       case 'TripDetailsView':
@@ -1004,44 +1004,12 @@ interface ScheduleRideScreenProps extends NavigationProps {
 const ScheduleRideScreen: React.FC<ScheduleRideScreenProps> = ({ navigate, setVehicleTypeForFilter }) => {
     const [childSeat, setChildSeat] = useState(false);
     const [wheelchairAccess, setWheelchairAccess] = useState(false);
-    const [luggagePhotos, setLuggagePhotos] = useState<File[]>([]);
-    const [isDragging, setIsDragging] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const [vehicleType, setVehicleType] = useState<string | null>(null);
 
     const vehicleTypes = {
         'Business Class': { name: 'Business Class', icon: <CarIcon/>, baseRate: 150 },
         'Economy Class': { name: 'Economy Class', icon: <CarIcon/>, baseRate: 80 },
         'Ordinary Class': { name: 'Ordinary Class', icon: <CarIcon/>, baseRate: 50 },
-    };
-
-    const handleFileSelect = (files: FileList | null) => {
-        if (!files) return;
-        const newFiles = Array.from(files);
-        setLuggagePhotos(prev => [...prev, ...newFiles]);
-    };
-
-    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
-
-    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        setIsDragging(false);
-    };
-
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        setIsDragging(false);
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            handleFileSelect(e.dataTransfer.files);
-            e.dataTransfer.clearData();
-        }
-    };
-    
-    const removePhoto = (indexToRemove: number) => {
-        setLuggagePhotos(prev => prev.filter((_, index) => index !== indexToRemove));
     };
 
     return (
@@ -1078,59 +1046,6 @@ const ScheduleRideScreen: React.FC<ScheduleRideScreenProps> = ({ navigate, setVe
                         <label htmlFor="wheelchair-access" className="ml-3 block text-sm text-gray-900">Wheelchair Access</label>
                     </div>
                 </div>
-            </div>
-
-            <div>
-                 <label className="block text-sm font-medium text-gray-700">Upload Luggage Photo (Optional)</label>
-                 <div
-                     onDragOver={handleDragOver}
-                     onDragLeave={handleDragLeave}
-                     onDrop={handleDrop}
-                     onClick={() => fileInputRef.current?.click()}
-                     className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 ${isDragging ? 'border-primary bg-primary/10' : 'border-dashed'} rounded-md cursor-pointer transition-colors`}
-                 >
-                     <div className="space-y-1 text-center">
-                         <UploadCloudIcon className="mx-auto h-12 w-12 text-gray-400" />
-                         <div className="flex text-sm text-gray-600">
-                             <span className="relative bg-white rounded-md font-medium text-primary hover:text-primary-hover focus-within:outline-none">
-                                 <span>Upload files</span>
-                             </span>
-                             <p className="pl-1">or drag and drop</p>
-                         </div>
-                         <p className="text-xs text-gray-500">JPG, PNG, HEIC</p>
-                     </div>
-                     <input
-                         ref={fileInputRef}
-                         id="file-upload-scheduled"
-                         name="file-upload-scheduled"
-                         type="file"
-                         className="sr-only"
-                         multiple
-                         accept="image/jpeg,image/png,image/heic,.heic"
-                         onChange={(e) => handleFileSelect(e.target.files)}
-                     />
-                 </div>
-                 {luggagePhotos.length > 0 && (
-                     <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2">
-                         {luggagePhotos.map((file, index) => (
-                             <div key={index} className="relative group">
-                                 <img
-                                     src={URL.createObjectURL(file)}
-                                     alt={`luggage preview ${index}`}
-                                     className="h-24 w-full object-cover rounded-md"
-                                     onLoad={e => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
-                                 />
-                                 <button
-                                     onClick={() => removePhoto(index)}
-                                     className="absolute top-1 right-1 bg-red-600/75 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                                     aria-label="Remove image"
-                                 >
-                                    &#x2715;
-                                 </button>
-                             </div>
-                         ))}
-                     </div>
-                 )}
             </div>
             
             <div className="pt-2">
@@ -1653,10 +1568,31 @@ const TripTrackingScreen: React.FC<NavigationProps> = ({ navigate }) => (
     </ScreenContainer>
 );
 
-const TripCompletionReceiptScreen: React.FC<NavigationProps & { flow: 'shuttle' | 'rental' | null; car: Car | null; duration: number }> = ({ navigate, flow, car, duration }) => {
+const TripCompletionReceiptScreen: React.FC<NavigationProps & { flow: 'shuttle' | 'rental' | null; car: Car | null; duration: number; showToast: (msg: string, type?: 'success' | 'error') => void; }> = ({ navigate, flow, car, duration, showToast }) => {
     const isRental = flow === 'rental' && car && duration > 0;
     const total = isRental ? car.price * duration : 10.00;
     
+    // State for rating
+    const [rating, setRating] = useState(0);
+    const [hoverRating, setHoverRating] = useState(0);
+
+    // Generate unique reference ID once
+    const [referenceId] = useState(`XT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`);
+    
+    const handleButtonClick = () => {
+        if (rating > 0) {
+            // "Send" button logic
+            showToast("Thank you for your feedback!");
+            // Navigate home after a short delay to allow toast to be seen
+            setTimeout(() => {
+                navigate('ServiceSelection');
+            }, 1500);
+        } else {
+            // "Back to Home" button logic
+            navigate('ServiceSelection');
+        }
+    };
+
     return (
         <ScreenContainer>
             <Header title={isRental ? "Booking Confirmed" : "Trip Completed"} onBack={() => navigate('ServiceSelection')} />
@@ -1664,6 +1600,12 @@ const TripCompletionReceiptScreen: React.FC<NavigationProps & { flow: 'shuttle' 
                 <CheckCircleIcon className="w-24 h-24 text-green-500 mx-auto mb-4" />
                 <h2 className="text-2xl font-bold font-display">Thank You!</h2>
                 <p className="text-lg text-gray-600">{isRental ? 'Your car rental is confirmed.' : 'Your trip to Accra Mall is complete.'}</p>
+                
+                <div className="mt-4">
+                    <p className="text-sm text-gray-500">Reference ID:</p>
+                    <p className="font-mono text-lg font-semibold text-gray-800 bg-gray-100 py-1 px-3 rounded-md inline-block">{referenceId}</p>
+                </div>
+
                 <div className="bg-gray-50 p-4 rounded-lg my-6 text-left">
                     <h3 className="font-bold text-lg mb-2">Receipt</h3>
                     {isRental ? (
@@ -1677,15 +1619,35 @@ const TripCompletionReceiptScreen: React.FC<NavigationProps & { flow: 'shuttle' 
                     )}
                     <div className="flex justify-between font-bold text-lg mt-2 pt-2 border-t"><span>Total Paid</span><span>${total.toFixed(2)}</span></div>
                 </div>
+
                 {!isRental && (
                     <div className="my-6">
                         <h3 className="font-bold text-lg mb-2">Rate Your Driver</h3>
-                        <div className="flex justify-center text-4xl text-gray-300 space-x-2">
-                            {[...Array(5)].map((_, i) => <button key={i} className="hover:text-yellow-400">★</button>)}
+                        <div className="flex justify-center text-4xl space-x-2">
+                            {[...Array(5)].map((_, index) => {
+                                const starValue = index + 1;
+                                return (
+                                    <button
+                                        key={starValue}
+                                        onClick={() => setRating(starValue)}
+                                        onMouseEnter={() => setHoverRating(starValue)}
+                                        onMouseLeave={() => setHoverRating(0)}
+                                        className={`transition-colors duration-200 ${
+                                            starValue <= (hoverRating || rating) ? 'text-yellow-400' : 'text-gray-300'
+                                        }`}
+                                        aria-label={`Rate ${starValue} star${starValue > 1 ? 's' : ''}`}
+                                    >
+                                        ★
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 )}
-                <Button onClick={() => navigate('ServiceSelection')}>Back to Home</Button>
+                
+                <Button onClick={handleButtonClick}>
+                    {rating > 0 ? 'Send' : 'Back to Home'}
+                </Button>
             </div>
         </ScreenContainer>
     );
