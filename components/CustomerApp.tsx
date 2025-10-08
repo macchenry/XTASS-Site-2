@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
-import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon, ShieldIcon, GoogleIcon, UploadCloudIcon, CarIcon, BabyIcon, BusIcon, SnowflakeIcon, FileTextIcon } from './Icons';
+import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, ClockIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon, ShieldIcon, GoogleIcon, UploadCloudIcon, CarIcon, BabyIcon, BusIcon, SnowflakeIcon, FileTextIcon } from './Icons';
 
 interface CustomerAppProps extends NavigationProps {
   screen: Screen;
@@ -1005,6 +1005,8 @@ const ScheduleRideScreen: React.FC<ScheduleRideScreenProps> = ({ navigate, setVe
     const [childSeat, setChildSeat] = useState(false);
     const [wheelchairAccess, setWheelchairAccess] = useState(false);
     const [vehicleType, setVehicleType] = useState<string | null>(null);
+    const [scheduledDate, setScheduledDate] = useState('');
+    const [scheduledTime, setScheduledTime] = useState('');
 
     // State and refs for new features
     const [documentType, setDocumentType] = useState('');
@@ -1078,6 +1080,7 @@ const ScheduleRideScreen: React.FC<ScheduleRideScreenProps> = ({ navigate, setVe
     };
 
     const vehicleTypes = {
+        'Premium Class': { name: 'Premium Class', icon: <CarIcon/>, baseRate: 200 },
         'Business Class': { name: 'Business Class', icon: <CarIcon/>, baseRate: 150 },
         'Economy Class': { name: 'Economy Class', icon: <CarIcon/>, baseRate: 80 },
         'Ordinary Class': { name: 'Ordinary Class', icon: <CarIcon/>, baseRate: 50 },
@@ -1089,7 +1092,7 @@ const ScheduleRideScreen: React.FC<ScheduleRideScreenProps> = ({ navigate, setVe
         <div className="p-4 space-y-4">
             <div>
                 <h3 className="block text-sm font-medium text-gray-700 mb-2">Select Vehicle Type</h3>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-4">
                     {Object.values(vehicleTypes).map(v => (
                         <button key={v.name} onClick={() => setVehicleType(v.name)} className={`p-3 border rounded-lg text-center transition-colors ${vehicleType === v.name ? 'bg-primary text-white border-primary' : 'bg-gray-50 hover:bg-gray-100'}`}>
                             {React.cloneElement(v.icon, {className: 'w-8 h-8 mx-auto mb-1'})}
@@ -1098,8 +1101,24 @@ const ScheduleRideScreen: React.FC<ScheduleRideScreenProps> = ({ navigate, setVe
                     ))}
                 </div>
             </div>
-            <Input id="date" label="Date" type="date" icon={<CalendarIcon className="w-5 h-5 text-gray-400" />} />
-            <Input id="time" label="Time" type="time" icon={<CalendarIcon className="w-5 h-5 text-gray-400" />} />
+            <div className="grid grid-cols-2 gap-4">
+                <Input 
+                    id="date" 
+                    label="Date" 
+                    type="date" 
+                    icon={<CalendarIcon className="w-5 h-5 text-gray-400" />}
+                    value={scheduledDate}
+                    onChange={e => setScheduledDate(e.target.value)}
+                />
+                <Input 
+                    id="time" 
+                    label="Time" 
+                    type="time" 
+                    icon={<ClockIcon className="w-5 h-5 text-gray-400" />}
+                    value={scheduledTime}
+                    onChange={e => setScheduledTime(e.target.value)}
+                />
+            </div>
             <Input id="pickup" label="Pickup Location" type="text" placeholder="Kotoka International Airport" defaultValue="Kotoka Int'l Airport, Terminal 3" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
             <Input id="destination" label="Destination" type="text" placeholder="Enter your destination" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
             <Input id="passengers" label="Passengers" type="number" placeholder="1" icon={<UsersIcon className="w-5 h-5 text-gray-400" />} />
@@ -1133,10 +1152,11 @@ const ScheduleRideScreen: React.FC<ScheduleRideScreenProps> = ({ navigate, setVe
                 }}
                 className="mt-1 block w-full px-4 py-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
               >
-                <option value="">Select Document Type</option>
+                <option value="">Select Document</option>
                 <option>Ghana/National ID Card</option>
                 <option>Passport</option>
                 <option>Voter’s ID Card</option>
+                <option>Driver’s License</option>
               </select>
 
               {documentType && (
