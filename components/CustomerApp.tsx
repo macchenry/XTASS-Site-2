@@ -1083,7 +1083,7 @@ const ScheduleRideScreen: React.FC<ScheduleRideScreenProps> = ({ navigate, setVe
         'Premium Class': { name: 'Premium Class', icon: <CarIcon/>, baseRate: 200 },
         'Business Class': { name: 'Business Class', icon: <CarIcon/>, baseRate: 150 },
         'Economy Class': { name: 'Economy Class', icon: <CarIcon/>, baseRate: 80 },
-        'Ordinary Class': { name: 'Ordinary Class', icon: <CarIcon/>, baseRate: 50 },
+        'Basic Class': { name: 'Basic Class', icon: <CarIcon/>, baseRate: 50 },
     };
 
     return (
@@ -1176,9 +1176,19 @@ const ScheduleRideScreen: React.FC<ScheduleRideScreenProps> = ({ navigate, setVe
                         Click to Upload
                     </button>
                     {uploadedDocument && (
-                        <div className="mt-2 text-sm text-gray-700 bg-gray-50 p-2 rounded-md flex items-center border border-gray-200">
-                            <FileTextIcon className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0" />
-                            <span className="truncate">{uploadedDocument.name}</span>
+                        <div className="mt-2 text-sm text-gray-700 bg-gray-50 p-2 rounded-md flex items-center justify-between border border-gray-200">
+                            <div className="flex items-center min-w-0">
+                                <FileTextIcon className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0" />
+                                <span className="truncate">{uploadedDocument.name}</span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setUploadedDocument(null)}
+                                className="ml-2 flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-red-500 hover:bg-red-100 hover:text-red-700"
+                                aria-label="Remove file"
+                            >
+                                <span className="text-2xl leading-none">&times;</span>
+                            </button>
                         </div>
                     )}
                 </div>
