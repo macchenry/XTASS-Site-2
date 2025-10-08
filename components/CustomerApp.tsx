@@ -22,6 +22,17 @@ interface VehicleClassInfo {
     baseRate: number;
 }
 
+// Define Rental Details type
+interface RentalDetails {
+  pickupDateTime: string;
+  returnDateTime: string;
+  passengers: string;
+  luggage: string;
+  pickupLocation: string;
+  dropoffLocation: string;
+}
+
+
 function usePrevious(value: Screen): Screen | undefined {
     // FIX: The `useRef` hook requires an initial value. It is initialized here with `undefined`.
     const ref = useRef<Screen | undefined>(undefined);
@@ -40,6 +51,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
   const [rentalDuration, setRentalDuration] = useState(0);
   const [currentFlow, setCurrentFlow] = useState<'shuttle' | 'rental' | null>(null);
   const [shuttleFlowOrigin, setShuttleFlowOrigin] = useState<Screen>('TripDetailsInput');
+  const [rentalDetails, setRentalDetails] = useState<RentalDetails | null>(null);
   const previousScreen = usePrevious(screen);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -105,11 +117,13 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
               setVehicleTypeForFilter={setSelectedVehicleClassInfo} 
           />;
       case 'CarRental':
-          return <CarRentalScreen navigate={navigate} setVehicleTypeForFilter={setSelectedVehicleClassInfo} setRentalDuration={setRentalDuration} />;
+          return <CarRentalScreen navigate={navigate} setRentalDuration={setRentalDuration} setVehicleTypeForFilter={setSelectedVehicleClassInfo} setRentalDetails={setRentalDetails} />;
       case 'AvailableCarsForRent':
           return <AvailableCarsForRentScreen navigate={navigate} onBack={() => navigate('CarRental')} onCarSelect={setSelectedCar} selectedClassInfo={selectedVehicleClassInfo} />;
       case 'CarRentDetails':
           return <CarRentDetailsScreen navigate={navigate} car={selectedCar} onBack={() => navigate('AvailableCarsForRent')} rentalDuration={rentalDuration} />;
+      case 'CarRentalConfirmation':
+          return <CarRentalConfirmationScreen navigate={navigate} car={selectedCar} rentalDetails={rentalDetails} rentalDuration={rentalDuration} onBack={() => navigate('CarRentDetails')} />;
       case 'CompatibleShuttlesList':
           return <CompatibleShuttlesListScreen navigate={navigate} onBack={() => navigate(shuttleFlowOrigin)} selectedClassInfo={selectedVehicleClassInfo} />;
       case 'ShuttleDriverDetails':
@@ -117,7 +131,7 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
       case 'BookingConfirmation':
           return <BookingConfirmationScreen navigate={navigate} />;
       case 'PaymentSelection':
-          const paymentBackTarget = currentFlow === 'rental' ? 'CarRentDetails' : 'BookingConfirmation';
+          const paymentBackTarget = currentFlow === 'rental' ? 'CarRentalConfirmation' : 'BookingConfirmation';
           return <PaymentSelectionScreen navigate={navigate} onBack={() => navigate(paymentBackTarget)} />;
       case 'PaymentProcessing':
           return <PaymentProcessingScreen navigate={navigate} showToast={showToast} flow={currentFlow} />;
@@ -854,8 +868,6 @@ const TripDetailsInputScreen: React.FC<TripDetailsInputScreenProps> = ({ navigat
     const [childSeat, setChildSeat] = useState(false);
     const [wheelchairAccess, setWheelchairAccess] = useState(false);
     const [vehicleType, setVehicleType] = useState<string | null>(null);
-
-    // State and refs for new features from Schedule Ride screen
     const [documentType, setDocumentType] = useState('');
     const [isCaptureModalOpen, setIsCaptureModalOpen] = useState(false);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -881,10 +893,8 @@ const TripDetailsInputScreen: React.FC<TripDetailsInputScreenProps> = ({ navigat
         fileInputRef.current?.click();
     };
 
-    // Camera management logic
     useEffect(() => {
         let stream: MediaStream | null = null;
-        
         const setupCamera = async () => {
             if (isCaptureModalOpen && !capturedImage) {
                 try {
@@ -899,9 +909,7 @@ const TripDetailsInputScreen: React.FC<TripDetailsInputScreenProps> = ({ navigat
                 }
             }
         };
-
         setupCamera();
-
         return () => {
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
@@ -920,7 +928,6 @@ const TripDetailsInputScreen: React.FC<TripDetailsInputScreenProps> = ({ navigat
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
                 const dataUrl = canvas.toDataURL('image/png');
                 setCapturedImage(dataUrl);
-
                 if (video.srcObject) {
                     (video.srcObject as MediaStream).getTracks().forEach(track => track.stop());
                 }
@@ -966,13 +973,13 @@ const TripDetailsInputScreen: React.FC<TripDetailsInputScreenProps> = ({ navigat
                         </div>
                     </div>
                 </div>
-
+                
                 <div>
-                  <label htmlFor="document-type" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="document-type-instant" className="block text-sm font-medium text-gray-700 mb-1">
                     Identification Document
                   </label>
                   <select
-                    id="document-type"
+                    id="document-type-instant"
                     name="document-type"
                     value={documentType}
                     onChange={(e) => {
@@ -1041,7 +1048,7 @@ const TripDetailsInputScreen: React.FC<TripDetailsInputScreenProps> = ({ navigat
                         }
                     </button>
                 </div>
-                
+
                 <div className="pt-2">
                     <Button onClick={() => {
                         if (vehicleType) {
@@ -1054,7 +1061,7 @@ const TripDetailsInputScreen: React.FC<TripDetailsInputScreenProps> = ({ navigat
                     }}>Find A Ride</Button>
                 </div>
             </div>
-
+            
             <Modal
                 isOpen={isCaptureModalOpen}
                 onClose={() => setIsCaptureModalOpen(false)}
@@ -1339,19 +1346,17 @@ const ScheduleRideScreen: React.FC<ScheduleRideScreenProps> = ({ navigate, setVe
     )
 };
 
-const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (info: VehicleClassInfo | null) => void; setRentalDuration: (duration: number) => void; }> = ({ navigate, setVehicleTypeForFilter, setRentalDuration }) => {
-    const [vehicleType, setVehicleType] = useState<string | null>(null);
+const CarRentalScreen: React.FC<NavigationProps & { setRentalDuration: (duration: number) => void; setVehicleTypeForFilter: (info: VehicleClassInfo | null) => void; setRentalDetails: (details: RentalDetails) => void; }> = ({ navigate, setRentalDuration, setVehicleTypeForFilter, setRentalDetails }) => {
     const [pickupDateTime, setPickupDateTime] = useState('');
     const [returnDateTime, setReturnDateTime] = useState('');
+    const [passengers, setPassengers] = useState('');
+    const [luggage, setLuggage] = useState('');
+    const [pickupLocation, setPickupLocation] = useState('');
+    const [dropoffLocation, setDropoffLocation] = useState('');
     const [duration, setDuration] = useState(0);
-    const [passengers, setPassengers] = useState('1');
-    const [luggage, setLuggage] = useState('2');
-    const [addons, setAddons] = useState({
-        childSeat: false,
-        wheelchairAccess: false,
-    });
-    
-    // State and refs for new features
+
+    const [vehicleType, setVehicleType] = useState<string | null>(null);
+    const [wheelchairAccess, setWheelchairAccess] = useState(false);
     const [documentType, setDocumentType] = useState('');
     const [isCaptureModalOpen, setIsCaptureModalOpen] = useState(false);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -1360,20 +1365,12 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        let calculatedDuration = 0;
-        if (pickupDateTime && returnDateTime) {
-            const start = new Date(pickupDateTime);
-            const end = new Date(returnDateTime);
-            if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end > start) {
-                const diffTime = end.getTime() - start.getTime();
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                calculatedDuration = diffDays;
-            }
-        }
-        setDuration(calculatedDuration);
-        setRentalDuration(calculatedDuration); // Also update parent state in real-time
-    }, [pickupDateTime, returnDateTime, setRentalDuration]);
+    const vehicleTypes = {
+        'Premium Class': { name: 'Premium Class', icon: <CarIcon/>, baseRate: 200 },
+        'Business Class': { name: 'Business Class', icon: <CarIcon/>, baseRate: 150 },
+        'Economy Class': { name: 'Economy Class', icon: <CarIcon/>, baseRate: 80 },
+        'Basic Class': { name: 'Basic Class', icon: <CarIcon/>, baseRate: 50 },
+    };
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files.length > 0) {
@@ -1385,10 +1382,8 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
         fileInputRef.current?.click();
     };
 
-    // Camera management logic
     useEffect(() => {
         let stream: MediaStream | null = null;
-        
         const setupCamera = async () => {
             if (isCaptureModalOpen && !capturedImage) {
                 try {
@@ -1403,9 +1398,7 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
                 }
             }
         };
-
         setupCamera();
-
         return () => {
             if (stream) {
                 stream.getTracks().forEach(track => track.stop());
@@ -1424,7 +1417,6 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
                 const dataUrl = canvas.toDataURL('image/png');
                 setCapturedImage(dataUrl);
-
                 if (video.srcObject) {
                     (video.srcObject as MediaStream).getTracks().forEach(track => track.stop());
                 }
@@ -1436,53 +1428,47 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
         setCapturedImage(null);
     };
 
-    const vehicleTypes = {
-        'Premium Class': { name: 'Premium Class', icon: <CarIcon/>, baseRate: 200 },
-        'Business Class': { name: 'Business Class', icon: <CarIcon/>, baseRate: 150 },
-        'Economy Class': { name: 'Economy Class', icon: <CarIcon/>, baseRate: 80 },
-        'Basic Class': { name: 'Basic Class', icon: <CarIcon/>, baseRate: 50 },
-    };
-    
-    const toggleAddon = (addon: keyof typeof addons) => {
-        setAddons(prev => ({...prev, [addon]: !prev[addon]}));
-    }
+    useEffect(() => {
+        let calculatedDuration = 0;
+        if (pickupDateTime && returnDateTime) {
+            const start = new Date(pickupDateTime);
+            const end = new Date(returnDateTime);
+            if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end > start) {
+                const diffTime = end.getTime() - start.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                calculatedDuration = diffDays;
+            }
+        }
+        setDuration(calculatedDuration);
+        setRentalDuration(calculatedDuration);
+    }, [pickupDateTime, returnDateTime, setRentalDuration]);
 
-    const CheckboxOption: React.FC<{ id: string, label: string, icon: React.ReactElement<{ className?: string }>, checked: boolean, onChange: () => void }> = ({ id, label, icon, checked, onChange }) => (
-         <div className="flex items-center justify-between">
-            <div className="flex items-center">
-                {React.cloneElement(icon, { className: 'w-5 h-5 mr-3 text-gray-500' })}
-                <label htmlFor={id} className="block text-sm text-gray-900">{label}</label>
-            </div>
-            <input id={id} name={id} type="checkbox" checked={checked} onChange={onChange} className="h-5 w-5 text-primary focus:ring-primary border-gray-300 rounded" />
-        </div>
-    );
+    const handleFindCars = () => {
+        if (vehicleType) {
+            const selectedVehicle = vehicleTypes[vehicleType as keyof typeof vehicleTypes];
+            setVehicleTypeForFilter({ name: selectedVehicle.name, baseRate: selectedVehicle.baseRate });
+        } else {
+            setVehicleTypeForFilter(null);
+        }
+        setRentalDetails({
+            pickupDateTime,
+            returnDateTime,
+            passengers,
+            luggage,
+            pickupLocation,
+            dropoffLocation
+        });
+        navigate('AvailableCarsForRent');
+    };
 
     return (
         <ScreenContainer>
             <Header title="Car Rental" onBack={() => navigate('ServiceSelection')} />
             <div className="p-4 space-y-6">
-                {/* Vehicle Type Selector */}
-                <div>
-                    <h3 className="block text-sm font-medium text-gray-700 mb-2">Select Vehicle Type</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        {Object.values(vehicleTypes).map(v => (
-                            <button key={v.name} onClick={() => setVehicleType(v.name)} className={`p-3 border rounded-lg text-center transition-colors ${vehicleType === v.name ? 'bg-primary text-white border-primary' : 'bg-gray-50 hover:bg-gray-100'}`}>
-                                {React.cloneElement(v.icon, {className: 'w-8 h-8 mx-auto mb-1'})}
-                                <span className="text-sm font-semibold">{v.name}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-                
-                {/* Date & Time Selector */}
                 <div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Input id="pickup-datetime" label="Pick-up Date & Time" type="datetime-local" value={pickupDateTime} onChange={e => setPickupDateTime(e.target.value)} />
                         <Input id="return-datetime" label="Return Date & Time" type="datetime-local" value={returnDateTime} onChange={e => setReturnDateTime(e.target.value)} />
-                    </div>
-                    <div className="mt-4 space-y-4">
-                        <Input id="passengers-rental" label="Passengers" type="number" placeholder="1" icon={<UsersIcon className="w-5 h-5 text-gray-400" />} value={passengers} onChange={e => setPassengers(e.target.value)} />
-                        <Input id="luggage-rental" label="Luggage" type="number" placeholder="2" icon={<BriefcaseIcon className="w-5 h-5 text-gray-400" />} value={luggage} onChange={e => setLuggage(e.target.value)} />
                     </div>
                     {duration > 0 && (
                         <div className="mt-4">
@@ -1494,80 +1480,92 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
                     )}
                 </div>
 
-                {/* Location Inputs */}
-                <div className="space-y-4">
-                    <Input id="pickup-location" label="Pick-up Location (Optional)" type="text" placeholder="e.g., Airport Terminal 3" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
-                    <Input id="dropoff-location" label="Drop-off Location (Optional)" type="text" placeholder="e.g., Same as pick-up" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
-                </div>
-                
-                {/* Optional Add-ons */}
                 <div>
-                    <h3 className="block text-sm font-medium text-gray-700 mb-2">Optional Add-ons</h3>
-                    <div className="space-y-2 bg-gray-50 p-3 rounded-md">
-                        <CheckboxOption id="child-seat" label="Child Seat" icon={<BabyIcon/>} checked={addons.childSeat} onChange={() => toggleAddon('childSeat')} />
-                        <CheckboxOption id="wheelchair-access" label="Wheelchair Access" icon={<UsersIcon/>} checked={addons.wheelchairAccess} onChange={() => toggleAddon('wheelchairAccess')} />
+                    <h3 className="block text-sm font-medium text-gray-700 mb-2">Select Vehicle Type</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        {Object.values(vehicleTypes).map(v => (
+                            <button key={v.name} onClick={() => setVehicleType(v.name)} className={`p-3 border rounded-lg text-center transition-colors ${vehicleType === v.name ? 'bg-primary text-white border-primary' : 'bg-gray-50 hover:bg-gray-100'}`}>
+                                {React.cloneElement(v.icon, {className: 'w-8 h-8 mx-auto mb-1'})}
+                                <span className="text-sm font-semibold">{v.name}</span>
+                            </button>
+                        ))}
                     </div>
                 </div>
 
-                {/* Document Upload */}
+                <div className="space-y-4">
+                    <Input id="passengers-rental" label="Passengers" type="number" placeholder="1" icon={<UsersIcon className="w-5 h-5 text-gray-400" />} value={passengers} onChange={e => setPassengers(e.target.value)} />
+                    <Input id="luggage-rental" label="Luggage" type="number" placeholder="2" icon={<BriefcaseIcon className="w-5 h-5 text-gray-400" />} value={luggage} onChange={e => setLuggage(e.target.value)} />
+                    <Input id="pickup-location" label="Pick-up Location (Optional)" type="text" placeholder="e.g., Airport Terminal 3" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} value={pickupLocation} onChange={e => setPickupLocation(e.target.value)} />
+                    <Input id="dropoff-location" label="Drop-off Location (Optional)" type="text" placeholder="e.g., Same as pick-up" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} value={dropoffLocation} onChange={e => setDropoffLocation(e.target.value)} />
+                </div>
+                
                  <div>
-                    <label htmlFor="document-type" className="block text-sm font-medium text-gray-700 mb-1">
-                        Identification Document
-                    </label>
-                    <select
-                        id="document-type"
-                        name="document-type"
-                        value={documentType}
-                        onChange={(e) => {
-                            setDocumentType(e.target.value);
-                            setUploadedDocument(null);
-                        }}
-                        className="mt-1 block w-full px-4 py-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-                    >
-                        <option value="">Select Document</option>
-                        <option>Ghana/National ID Card</option>
-                        <option>Passport</option>
-                        <option>Voter’s ID Card</option>
-                        <option>Driver’s License</option>
-                    </select>
-
-                    {documentType && (
-                        <div className="mt-2">
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleFileChange}
-                                className="hidden"
-                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                            />
-                            <button
-                                type="button"
-                                onClick={handleUploadClick}
-                                className="text-primary font-medium hover:underline text-sm"
-                            >
-                                Click to Upload
-                            </button>
-                            {uploadedDocument && (
-                                <div className="mt-2 text-sm text-gray-700 bg-gray-50 p-2 rounded-md flex items-center justify-between border border-gray-200">
-                                    <div className="flex items-center min-w-0">
-                                        <FileTextIcon className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0" />
-                                        <span className="truncate">{uploadedDocument.name}</span>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setUploadedDocument(null)}
-                                        className="ml-2 flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-red-500 hover:bg-red-100 hover:text-red-700"
-                                        aria-label="Remove file"
-                                    >
-                                        <span className="text-2xl leading-none">&times;</span>
-                                    </button>
-                                </div>
-                            )}
+                    <h3 className="block text-sm font-medium text-gray-700 mb-2">Other Requirements</h3>
+                    <div className="space-y-2 bg-gray-50 p-3 rounded-md">
+                        <div className="flex items-center">
+                            <input id="wheelchair-access" name="wheelchair-access" type="checkbox" checked={wheelchairAccess} onChange={e => setWheelchairAccess(e.target.checked)} className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" />
+                            <label htmlFor="wheelchair-access" className="ml-3 block text-sm text-gray-900">Wheelchair Access</label>
                         </div>
-                    )}
+                    </div>
                 </div>
 
-                {/* Live Photo */}
+                <div>
+                  <label htmlFor="document-type-rental" className="block text-sm font-medium text-gray-700 mb-1">
+                    Identification Document
+                  </label>
+                  <select
+                    id="document-type-rental"
+                    name="document-type"
+                    value={documentType}
+                    onChange={(e) => {
+                        setDocumentType(e.target.value);
+                        setUploadedDocument(null);
+                    }}
+                    className="mt-1 block w-full px-4 py-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                  >
+                    <option value="">Select Document</option>
+                    <option>Ghana/National ID Card</option>
+                    <option>Passport</option>
+                    <option>Voter’s ID Card</option>
+                    <option>Driver’s License</option>
+                  </select>
+
+                  {documentType && (
+                    <div className="mt-2">
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileChange}
+                            className="hidden"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        />
+                        <button
+                            type="button"
+                            onClick={handleUploadClick}
+                            className="text-primary font-medium hover:underline text-sm"
+                        >
+                            Click to Upload
+                        </button>
+                        {uploadedDocument && (
+                            <div className="mt-2 text-sm text-gray-700 bg-gray-50 p-2 rounded-md flex items-center justify-between border border-gray-200">
+                                <div className="flex items-center min-w-0">
+                                    <FileTextIcon className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0" />
+                                    <span className="truncate">{uploadedDocument.name}</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setUploadedDocument(null)}
+                                    className="ml-2 flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-red-500 hover:bg-red-100 hover:text-red-700"
+                                    aria-label="Remove file"
+                                >
+                                    <span className="text-2xl leading-none">&times;</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                  )}
+                </div>
+
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Live Photo</label>
                     <button
@@ -1585,26 +1583,16 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
                         }
                     </button>
                 </div>
-                
-                {/* Action Button */}
+
                 <div className="pt-2">
                     <Button
-                        onClick={() => {
-                            if (vehicleType) {
-                                const selectedVehicle = vehicleTypes[vehicleType as keyof typeof vehicleTypes];
-                                setVehicleTypeForFilter({ name: selectedVehicle.name, baseRate: selectedVehicle.baseRate });
-                            } else {
-                                setVehicleTypeForFilter(null);
-                            }
-                            navigate('AvailableCarsForRent');
-                        }}
+                        onClick={handleFindCars}
                         className="hover:animate-pulse"
                     >
-                        Continue
+                        Find Available Cars
                     </Button>
                 </div>
             </div>
-
             <Modal
                 isOpen={isCaptureModalOpen}
                 onClose={() => setIsCaptureModalOpen(false)}
@@ -1633,11 +1621,12 @@ const CarRentalScreen: React.FC<NavigationProps & { setVehicleTypeForFilter: (in
     );
 };
 
+
 const AvailableCarsForRentScreen: React.FC<NavigationProps & { onBack: () => void; onCarSelect: (car: Car) => void; selectedClassInfo: VehicleClassInfo | null; }> = ({ navigate, onBack, onCarSelect, selectedClassInfo }) => {
     const cars: Car[] = [
         { class: 'Economy Class', driver: 'John Doe', price: 80.00, seed: 'car1', description: 'Comfortable 4-seater with A/C.' },
         { class: 'Business Class', driver: 'Jane Smith', price: 150.00, seed: 'car2', description: 'Luxury sedan with premium features.' },
-        { class: 'Ordinary Class', driver: 'Kwame Nkrumah', price: 50.00, seed: 'car3', description: 'A reliable and affordable option.' },
+        { class: 'Basic Class', driver: 'Kwame Nkrumah', price: 50.00, seed: 'car3', description: 'A reliable and affordable option.' },
         { class: 'Business Class', driver: 'Adwoa Williams', price: 155.00, seed: 'car4', description: 'Spacious and elegant for business.' },
         { class: 'Economy Class', driver: 'Kojo Antwi', price: 85.00, seed: 'car5', description: 'Fuel-efficient and easy to park.' },
         { class: 'Economy Class', driver: 'Abena Yeboah', price: 82.00, seed: 'car6', description: 'Modern compact, great for city driving.' },
@@ -1758,13 +1747,61 @@ const CarRentDetailsScreen: React.FC<NavigationProps & { car: Car | null; onBack
 
                 {/* Action Button */}
                  <div className="p-4 mt-2">
-                    <Button onClick={() => navigate('PaymentSelection')}>Book Car Now</Button>
+                    <Button onClick={() => navigate('CarRentalConfirmation')}>Book Car Now</Button>
                 </div>
             </div>
         </ScreenContainer>
     );
 };
 
+interface CarRentalConfirmationProps extends NavigationProps {
+    car: Car | null;
+    rentalDetails: RentalDetails | null;
+    rentalDuration: number;
+    onBack: () => void;
+}
+const CarRentalConfirmationScreen: React.FC<CarRentalConfirmationProps> = ({ navigate, car, rentalDetails, rentalDuration, onBack }) => {
+    useEffect(() => {
+        if (!car || !rentalDetails) {
+            navigate('CarRental');
+        }
+    }, [car, rentalDetails, navigate]);
+
+    if (!car || !rentalDetails) {
+        return null;
+    }
+
+    const total = rentalDuration > 0 ? car.price * rentalDuration : car.price;
+
+    return (
+        <ScreenContainer>
+            <Header title="Confirm Rental" onBack={onBack} />
+            <div className="p-4">
+                <div className="bg-white rounded-lg shadow-md border p-4">
+                    <h3 className="font-bold text-lg mb-4 border-b pb-2">Rental Summary</h3>
+                    <div className="space-y-2 text-gray-700">
+                        <p><strong>Vehicle:</strong> {car.class} ({car.driver})</p>
+                        <p><strong>Pick-up:</strong> {new Date(rentalDetails.pickupDateTime).toLocaleString()}</p>
+                        <p><strong>Return:</strong> {new Date(rentalDetails.returnDateTime).toLocaleString()}</p>
+                        <p><strong>Duration:</strong> {rentalDuration} Day{rentalDuration > 1 ? 's' : ''}</p>
+                        <p><strong>Passengers:</strong> {rentalDetails.passengers}</p>
+                    </div>
+                    <div className="mt-4 pt-4 border-t flex justify-between items-center">
+                        <span className="text-lg font-semibold">Total Cost:</span>
+                        <span className="text-2xl font-bold text-primary">${total.toFixed(2)}</span>
+                    </div>
+                </div>
+                 <div className="mt-4 flex items-start space-x-2">
+                    <input type="checkbox" id="terms-rental" className="mt-1 h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"/>
+                    <label htmlFor="terms-rental" className="text-sm text-gray-600">I agree to the <a href="#" className="text-primary underline">Terms of Service</a> and <a href="#" className="text-primary underline">Rental Policy</a>.</label>
+                </div>
+                <div className="mt-6">
+                    <Button onClick={() => navigate('PaymentSelection')}>Proceed to Payment</Button>
+                </div>
+            </div>
+        </ScreenContainer>
+    );
+};
 
 interface CompatibleShuttlesListScreenProps extends NavigationProps {
   onBack: () => void;
@@ -1774,10 +1811,10 @@ const CompatibleShuttlesListScreen: React.FC<CompatibleShuttlesListScreenProps> 
     const shuttles = [
         { class: 'Economy Class', name: 'Toyota Hiace', driver: 'Kofi Mensah', price: 100.00, distance: 50, seed: 'shuttle1' },
         { class: 'Business Class', name: 'Hyundai H1', driver: 'Ama Serwaa', price: 180.00, distance: 75, seed: 'shuttle2' },
-        { class: 'Ordinary Class', name: 'Mercedes Sprinter', driver: 'Yaw Boateng', price: 120.00, distance: 60, seed: 'shuttle3' },
+        { class: 'Basic Class', name: 'Mercedes Sprinter', driver: 'Yaw Boateng', price: 120.00, distance: 60, seed: 'shuttle3' },
         { class: 'Business Class', name: 'Ford Transit', driver: 'Adwoa Williams', price: 185.00, distance: 75, seed: 'shuttle4' },
         { class: 'Economy Class', name: 'Nissan Urvan', driver: 'Kojo Antwi', price: 105.00, distance: 50, seed: 'shuttle5' },
-        { class: 'Ordinary Class', name: 'IVECo Daily', driver: 'Abena Yeboah', price: 122.00, distance: 60, seed: 'shuttle6' },
+        { class: 'Basic Class', name: 'IVECo Daily', driver: 'Abena Yeboah', price: 122.00, distance: 60, seed: 'shuttle6' },
     ];
 
     const filteredShuttles = selectedClassInfo
