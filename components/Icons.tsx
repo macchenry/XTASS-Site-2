@@ -44,7 +44,11 @@ export const LogOutIcon: React.FC<IconProps> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
 );
 export const CarIcon: React.FC<IconProps> = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9L1 16v1c0 .6.4 1 1 1h2"/><path d="M14 17H6"/><path d="M15 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M5 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M16 10h3"/><path d="m3 16-2 4"/><path d="M12 10V5c0-.6.4-1 1-1h2c.6 0 1 .4 1 1v5"/></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M3 10l3-3h12l3 3v6h-2c-1.1 0-2-.9-2-2v-1H7v1c0 1.1-.9 2-2 2H3v-6z" />
+    <circle cx="7.5" cy="14.5" r="1.5" />
+    <circle cx="16.5" cy="14.5" r="1.5" />
+  </svg>
 );
 
 export const ShieldIcon: React.FC<IconProps> = ({ className }) => (
@@ -66,7 +70,9 @@ export const MenuIcon: React.FC<IconProps> = ({ className }) => (
 );
 
 export const CheckCircleIcon: React.FC<IconProps> = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
 );
 export const XCircleIcon: React.FC<IconProps> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
@@ -90,7 +96,10 @@ export const FileTextIcon: React.FC<IconProps> = ({ className }) => (
 );
 
 export const SearchIcon: React.FC<IconProps> = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="11" cy="11" r="8"></circle>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+  </svg>
 );
 
 export const BusIcon: React.FC<IconProps> = ({ className }) => (
@@ -129,4 +138,13 @@ export const BabyIcon: React.FC<IconProps> = ({ className }) => (
 
 export const SnowflakeIcon: React.FC<IconProps> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" y1="2" x2="12" y2="22"/><line x1="12" y1="12" x2="4.22" y2="19.78"/><line x1="12" y1="12" x2="19.78" y2="19.78"/><line x1="12" y1="12" x2="19.78" y2="4.22"/><line x1="12" y1="12" x2="4.22" y2="4.22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+);
+
+export const BookingIcon: React.FC<IconProps> = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+    <line x1="9" y1="7" x2="15" y2="7" />
+    <line x1="9" y1="12" x2="15" y2="12" />
+    <line x1="9" y1="17" x2="13" y2="17" />
+  </svg>
 );
