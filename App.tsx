@@ -1,4 +1,4 @@
-// SCREEN 1 UPDATED ONLY — Reverted “How It Works” section to original design
+// SCREEN 1 ONLY UPDATED — Reduced hero subtitle font size by 30%
 
 import React, { useState, useCallback } from 'react';
 import { CustomerApp } from './components/CustomerApp';
@@ -109,8 +109,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect }) => {
           </div>
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32 text-center">
             <p className="font-display">Welcome to</p>
-            <h1 className="text-4xl md:text-6xl font-display font-bold mt-2">XCELLENT TRANSPORT & SHUTTLE SERVICES</h1>
-            <p className="text-xl md:text-2xl mt-4 max-w-3xl mx-auto">Trusted Transport Services for Every Traveler</p>
+            <h1 className="text-2xl md:text-3xl font-display font-semibold mt-2">XCELLENT TRANSPORT & SHUTTLE SERVICES</h1>
+            <p className="text-sm md:text-base mt-4 max-w-3xl mx-auto">Trusted Transport Services for Every Traveler</p>
             
             <div className="mt-12 bg-white p-6 shadow-2xl max-w-5xl mx-auto text-gray-800">
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-center">
