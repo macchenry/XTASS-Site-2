@@ -1,3 +1,4 @@
+
 // SCREEN 1 ONLY UPDATED — Recreated the "Airport Transportation" section to visually match the provided reference image, including the overlapping card layout, shadows, rounded corners, and typography. The rest of the page and app remain unchanged.
 import React, { useState, useCallback } from 'react';
 import { CustomerApp } from './components/CustomerApp';
@@ -246,11 +247,11 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect }) => {
                 <h4 className="font-bold font-display">Upfront Pricing</h4>
                 <p className="mt-2 text-sm">All inclusive fares with no hidden fees or additional charges for reserving in advance. No surge pricing during peak travel times or inclement weather.</p>
               </div>
-              <div className="bg-primary text-white p-6">
+              <div className="text-white p-6" style={{ backgroundColor: '#660032' }}>
                 <h4 className="font-bold font-display">Departure & Destination</h4>
                 <p className="mt-2 text-sm">Book transportation for all four legs of your journey in your departure and destination cities at the same time – making airport travel easy.</p>
               </div>
-              <div className="bg-primary text-white p-6">
+              <div className="text-white p-6" style={{ backgroundColor: '#660032' }}>
                 <h4 className="font-bold font-display">Available 24/7</h4>
                 <p className="mt-2 text-sm">Book airport rides, around town transportation, or tours and attractions securely with the device of your choice.</p>
               </div>
@@ -302,29 +303,29 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect }) => {
             <h2 className="text-4xl font-display font-bold text-primary">Where We Go</h2>
             <p className="mt-4 text-lg max-w-2xl mx-auto">Connecting you to major airports across Ghana. Your journey, our priority.</p>
             <div className="mt-8 grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-              <button className="bg-primary text-white p-4 hover:bg-primary-hover">Kotoka Int'l Airport</button>
-              <button className="bg-primary text-white p-4 hover:bg-primary-hover">Tamale Airport</button>
-              <button className="bg-primary text-white p-4 hover:bg-primary-hover">Takoradi Airport</button>
-              <button className="bg-primary text-white p-4 hover:bg-primary-hover">Kumasi Airport</button>
-              <button className="bg-primary text-white p-4 hover:bg-primary-hover">Wa Airport</button>
-              <button className="bg-primary text-white p-4 hover:bg-primary-hover">Sunyani Airport</button>
+              <button className="text-white p-4 hover:bg-primary-hover" style={{ backgroundColor: '#660032' }}>Kotoka Int'l Airport</button>
+              <button className="text-white p-4 hover:bg-primary-hover" style={{ backgroundColor: '#660032' }}>Tamale Airport</button>
+              <button className="text-white p-4 hover:bg-primary-hover" style={{ backgroundColor: '#660032' }}>Takoradi Airport</button>
+              <button className="text-white p-4 hover:bg-primary-hover" style={{ backgroundColor: '#660032' }}>Kumasi Airport</button>
+              <button className="text-white p-4 hover:bg-primary-hover" style={{ backgroundColor: '#660032' }}>Wa Airport</button>
+              <button className="text-white p-4 hover:bg-primary-hover" style={{ backgroundColor: '#660032' }}>Sunyani Airport</button>
             </div>
           </div>
         </section>
 
         {/* FAQ Section */}
-        <section className="py-16 bg-gray-50">
+        <section className="py-16" style={{ backgroundColor: '#660032' }}>
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-4xl font-display font-bold text-primary text-center">Frequently Asked Questions</h2>
-            <div className="mt-8 space-y-4">
+            <h2 className="text-4xl font-display font-bold text-white text-center">Frequently Asked Questions</h2>
+            <div className="mt-12 space-y-6">
               {faqs.map((faq, index) => (
-                <div key={index} className="border-b border-gray-200 pb-4">
-                  <button onClick={() => setOpenFaq(openFaq === index ? null : index)} className="w-full flex justify-between items-center text-left text-xl font-semibold">
+                <div key={index}>
+                  <button onClick={() => setOpenFaq(openFaq === index ? null : index)} className="w-full flex justify-between items-center text-left text-xl font-semibold text-white">
                     <span>{faq.q}</span>
                     <ChevronDownIcon className={`w-6 h-6 transform transition-transform ${openFaq === index ? 'rotate-180' : ''}`}/>
                   </button>
                   {openFaq === index && (
-                    <div className="mt-2 text-gray-600">
+                    <div className="mt-4 text-white/90 text-left pr-8">
                       {faq.a}
                     </div>
                   )}
