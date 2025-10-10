@@ -105,8 +105,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect }) => {
           {/* Hero background and text */}
           <div className="relative bg-black text-white">
             <div 
-              className="absolute inset-0 bg-cover bg-center opacity-50" 
-              style={{backgroundImage: "url('https://images.unsplash.com/photo-1570129477492-45c003edd2be?q=80&w=2070&auto=format&fit=crop')"}}>
+              className="absolute inset-0 bg-cover bg-center opacity-[.85]" 
+              style={{backgroundImage: "url('https://i.ibb.co/svMbtFfn/XTASS-Hero-Banner-2.jpg')"}}>
             </div>
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 md:pt-32 pb-32 text-center">
               <p className="font-display">Welcome to</p>
@@ -217,11 +217,11 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect }) => {
         {/* Private Car Service Section */}
         <section className="py-16" style={{ backgroundColor: '#660033' }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="relative flex flex-col md:flex-row-reverse items-center">
+                <div className="relative flex flex-col md:flex-row items-center">
                 <div className="md:w-3/5 w-full">
                     <img src="https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?q=80&w=2070&auto=format&fit=crop" alt="Private Car Service" className="shadow-xl w-full h-auto object-cover"/>
                 </div>
-                <div className="md:w-1/2 w-full bg-white p-8 md:p-12 shadow-xl md:-mr-24 mt-8 md:mt-0 relative z-10">
+                <div className="md:w-1/2 w-full bg-white p-8 md:p-12 shadow-xl md:-ml-24 mt-8 md:mt-0 relative z-10">
                     <h2 className="text-4xl font-display font-bold text-gray-800 leading-tight">Private Car Service</h2>
                     <hr className="my-6 border-gray-800 w-24 border-t-2" />
                     <p className="mt-4 text-lg text-gray-600">Travel on your schedule with a private driver. Book by the hour or choose point-to-point transfers.</p>
