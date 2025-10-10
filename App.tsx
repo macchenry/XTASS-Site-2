@@ -236,24 +236,27 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect }) => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <h3 className="text-2xl font-display font-bold text-primary">Door-to-Door Airport Transportation</h3>
-              <p className="mt-4">XTASS has been providing affordable, convenient, and safe shared ride and private airport transfers. We pioneered the shared ride concept with specialization in grouping and routing passengers traveling in the same direction together in an airport shuttle. Since then, we've expanded our ground transportation services beyond shared ride vans to include: airport car service, point to point transfers, and group transportation for special events. We're not just about getting from point A to point B, but about enhancing your entire travel experience.</p>
+              <p className="mt-4">XTASS has been providing affordable, convenient, and safe shared ride and private airport transfers. We pioneered the shared ride concept with specialization in grouping and routing passengers traveling in the same direction together in an airport shuttle. Since then, we’ve expanded our ground transportation services beyond shared ride vans to include: airport car service, point to point transfers, and group transportation for special events. We’re not just about getting from point A to point B, but about enhancing your entire travel experience.</p>
+              <p className="mt-4">XTASS is a national brand that partners with trusted local transportation providers in each city, so you get the convenience of a national network with the service of a local expert. Our operators provide door-to-door airport pickups and drop offs from your home, office, hotel, or anywhere you desire. We use flight tracking software so we know if your flight is delayed or arriving early.</p>
+              <p className="mt-4">Booking with XTASS means choosing an organization that values safety, affordability, and convenience. With transparent fares, and the assurance of reliable transport, we’ll not only meet your travel demands, but exceed them.</p>
+              <p className="mt-4 font-semibold">Book your ride with us today!</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="bg-primary text-white p-6">
+              <div className="bg-white text-primary p-6 border border-primary">
                 <h4 className="font-bold font-display">Upfront Pricing</h4>
-                <p className="mt-2 text-sm">All inclusive fares with no hidden fees or additional charges.</p>
+                <p className="mt-2 text-sm">All inclusive fares with no hidden fees or additional charges for reserving in advance. No surge pricing during peak travel times or inclement weather.</p>
               </div>
               <div className="bg-primary text-white p-6">
                 <h4 className="font-bold font-display">Departure & Destination</h4>
-                <p className="mt-2 text-sm">Book transportation for all four legs of your journey at the same time.</p>
+                <p className="mt-2 text-sm">Book transportation for all four legs of your journey in your departure and destination cities at the same time – making airport travel easy.</p>
               </div>
               <div className="bg-primary text-white p-6">
                 <h4 className="font-bold font-display">Available 24/7</h4>
-                <p className="mt-2 text-sm">Book airport rides, around town transportation, or tours securely.</p>
+                <p className="mt-2 text-sm">Book airport rides, around town transportation, or tours and attractions securely with the device of your choice.</p>
               </div>
-              <div className="bg-primary text-white p-6">
+              <div className="bg-white text-primary p-6 border border-primary">
                 <h4 className="font-bold font-display">Safety First</h4>
-                <p className="mt-2 text-sm">From background checks to deep cleaning standards, we ensure your ride is a safe one.</p>
+                <p className="mt-2 text-sm">From background and safety checks to deep cleaning standards, we're doing our part to ensure that your ride is a safe one.</p>
               </div>
             </div>
           </div>
