@@ -1,11 +1,10 @@
-// SCREEN 1 ONLY UPDATED — Reduced hero subtitle font size by 30%
-
+// SCREEN 1 ONLY UPDATED — Adjusted form position to overlap halfway between the Hero Section and the next section, matching the layout shown in Edit 2.png.
 import React, { useState, useCallback } from 'react';
 import { CustomerApp } from './components/CustomerApp';
 import { DriverApp } from './components/DriverApp';
 import { AdminPanel } from './components/AdminPanel';
 import type { Role, Screen } from './types';
-import { SearchIcon, CheckCircleIcon, CreditCardIcon, CarIcon, ChevronDownIcon } from './components/Icons';
+import { SearchIcon, CheckCircleIcon, CreditCardIcon, CarIcon, ChevronDownIcon, MapPinIcon, CalendarIcon, ClockIcon } from './components/Icons';
 
 
 const App: React.FC = () => {
@@ -102,33 +101,104 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect }) => {
 
       {/* Hero Section */}
       <main>
-        <div className="relative bg-black text-white">
-          <div 
-            className="absolute inset-0 bg-cover bg-center opacity-50" 
-            style={{backgroundImage: "url('https://images.unsplash.com/photo-1570129477492-45c003edd2be?q=80&w=2070&auto=format&fit=crop')"}}>
-          </div>
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32 text-center">
-            <p className="font-display">Welcome to</p>
-            <h1 className="text-2xl md:text-3xl font-display font-semibold mt-2">XCELLENT TRANSPORT & SHUTTLE SERVICES</h1>
-            <p className="text-sm md:text-base mt-4 max-w-3xl mx-auto">Trusted Transport Services for Every Traveler</p>
-            
-            <div className="mt-12 bg-white p-6 shadow-2xl max-w-5xl mx-auto text-gray-800">
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-center">
-                <input type="text" placeholder="Pick Up Location" defaultValue="Kotoka International Airport, Ghana" className="w-full p-3 border border-gray-300 col-span-1 lg:col-span-1"/>
-                <input type="text" placeholder="Drop Off Location" defaultValue="East Legon, Accra" className="w-full p-3 border border-gray-300 col-span-1 lg:col-span-1"/>
-                <div className="grid grid-cols-3 gap-2 col-span-1 md:col-span-3 lg:col-span-2">
-                  <input type="date" placeholder="Date" className="w-full p-3 border border-gray-300"/>
-                  <input type="time" placeholder="Time" className="w-full p-3 border border-gray-300"/>
-                  <input type="number" placeholder="Passengers" className="w-full p-3 border border-gray-300"/>
-                </div>
-                <button onClick={() => onRoleSelect('Customer')} className="w-full bg-accent text-primary font-bold p-3 hover:bg-yellow-400 transition-colors col-span-1 lg:col-span-1">Book Now</button>
-              </div>
+        <div className="relative">
+          {/* Hero background and text */}
+          <div className="relative bg-black text-white">
+            <div 
+              className="absolute inset-0 bg-cover bg-center opacity-50" 
+              style={{backgroundImage: "url('https://images.unsplash.com/photo-1570129477492-45c003edd2be?q=80&w=2070&auto=format&fit=crop')"}}>
             </div>
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 md:pt-32 pb-32 text-center">
+              <p className="font-display">Welcome to</p>
+              <h1 className="text-2xl md:text-3xl font-display font-semibold mt-2">XCELLENT TRANSPORT & SHUTTLE SERVICES</h1>
+              <p className="text-sm md:text-base mt-4 max-w-3xl mx-auto">Trusted Transport Services for Every Traveler</p>
+            </div>
+          </div>
+
+          {/* Form - positioned to overlap */}
+          <div className="relative z-10 -mt-24 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-white p-8 shadow-lg text-left text-gray-800">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Pick Up Location */}
+                  <div>
+                    <label htmlFor="pickup" className="block text-lg font-semibold text-gray-800 mb-2">Pick Up Location</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        id="pickup"
+                        placeholder="Kotoka International Airport, Ghana."
+                        className="w-full p-3 pl-4 pr-10 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-accent placeholder-gray-500"
+                      />
+                      <MapPinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-accent" />
+                    </div>
+                  </div>
+                  {/* Drop Off Location */}
+                  <div>
+                    <label htmlFor="dropoff" className="block text-lg font-semibold text-gray-800 mb-2">Drop Off Location</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        id="dropoff"
+                        placeholder="East Legon, Accra."
+                        className="w-full p-3 pl-4 pr-10 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-accent placeholder-gray-500"
+                      />
+                      <MapPinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-accent" />
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+                  {/* Date */}
+                  <div>
+                    <label htmlFor="date" className="block text-lg font-semibold text-gray-800 mb-2">Date</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        id="date"
+                        placeholder="Enter Date"
+                        onFocus={(e) => (e.target.type = 'date')}
+                        onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
+                        className="w-full p-3 pl-4 pr-10 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-accent placeholder-gray-500"
+                      />
+                      <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-accent" />
+                    </div>
+                  </div>
+                  {/* Time */}
+                  <div>
+                    <label htmlFor="time" className="block text-lg font-semibold text-gray-800 mb-2">Time</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        id="time"
+                        placeholder="Enter Time"
+                        onFocus={(e) => (e.target.type = 'time')}
+                        onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
+                        className="w-full p-3 pl-4 pr-10 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-accent placeholder-gray-500"
+                      />
+                      <ClockIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-accent" />
+                    </div>
+                  </div>
+                  {/* Passaengers */}
+                  <div>
+                    <label htmlFor="passengers" className="block text-lg font-semibold text-gray-800 mb-2">Passaengers</label>
+                    <input
+                      type="number"
+                      id="passengers"
+                      placeholder="No. of Passangers"
+                      className="w-full p-3 pl-4 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-accent placeholder-gray-500"
+                    />
+                  </div>
+                  {/* Book Now Button */}
+                  <div>
+                    <button onClick={() => onRoleSelect('Customer')} className="w-full bg-accent text-primary font-bold py-3 px-6 hover:bg-yellow-400 transition-colors text-lg">Book Now</button>
+                  </div>
+                </div>
+              </div>
           </div>
         </div>
 
+
         {/* Services Section */}
-        <section className="py-16 bg-gray-50">
+        <section className="pt-24 pb-16 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div className="order-2 md:order-1">
               <img src="https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=2070&auto=format&fit=crop" alt="Airport Transportation" className="shadow-xl w-full h-auto object-cover"/>
