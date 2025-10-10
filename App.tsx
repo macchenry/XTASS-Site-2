@@ -202,24 +202,27 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect }) => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="relative flex flex-col md:flex-row items-center">
               <div className="md:w-3/5 w-full">
-                <img src="https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=2070&auto=format&fit=crop" alt="Airport Transportation" className="rounded-lg shadow-xl w-full h-auto object-cover"/>
+                <img src="https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=2070&auto=format&fit=crop" alt="Airport Transportation" className="shadow-xl w-full h-auto object-cover"/>
               </div>
-              <div className="md:w-1/2 w-full bg-white p-8 md:p-12 shadow-xl rounded-lg md:-ml-24 mt-8 md:mt-0 relative">
+              <div className="md:w-1/2 w-full bg-white p-8 md:p-12 shadow-xl md:-ml-24 mt-8 md:mt-0 relative">
                 <h2 className="text-4xl font-display font-bold text-gray-800 leading-tight">Airport Transportation</h2>
                 <hr className="my-6 border-gray-800 w-24 border-t-2" />
                 <p className="mt-4 text-lg text-gray-600">Reserve shared ride or private airport transportation in your departure and destination city. Vans, sedans, or SUVs.</p>
-                <button onClick={() => onRoleSelect('Customer')} className="mt-8 bg-primary text-white font-bold py-3 px-8 rounded-md hover:bg-primary-hover transition-colors">AIRPORT RIDES</button>
+                <button onClick={() => onRoleSelect('Customer')} className="mt-8 bg-primary text-white font-bold py-3 px-8 hover:bg-primary-hover transition-colors">AIRPORT RIDES</button>
               </div>
             </div>
           </div>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center mt-16">
-            <div>
-              <h2 className="text-4xl font-display font-bold text-primary">Private Car Service</h2>
-              <p className="mt-4 text-lg">Travel on your schedule with a private driver. Book by the hour or choose point-to-point transfers.</p>
-              <button onClick={() => onRoleSelect('Customer')} className="mt-6 bg-primary text-white font-bold py-3 px-8 hover:bg-primary-hover transition-colors">PRIVATE CAR SERVICE</button>
-            </div>
-            <div>
-              <img src="https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?q=80&w=2070&auto=format&fit=crop" alt="Private Car Service" className="shadow-xl w-full h-auto object-cover"/>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
+            <div className="relative flex flex-col md:flex-row-reverse items-center">
+              <div className="md:w-3/5 w-full">
+                <img src="https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?q=80&w=2070&auto=format&fit=crop" alt="Private Car Service" className="shadow-xl w-full h-auto object-cover"/>
+              </div>
+              <div className="md:w-1/2 w-full bg-white p-8 md:p-12 shadow-xl md:-mr-24 mt-8 md:mt-0 relative z-10">
+                <h2 className="text-4xl font-display font-bold text-gray-800 leading-tight">Private Car Service</h2>
+                <hr className="my-6 border-gray-800 w-24 border-t-2" />
+                <p className="mt-4 text-lg text-gray-600">Travel on your schedule with a private driver. Book by the hour or choose point-to-point transfers.</p>
+                <button onClick={() => onRoleSelect('Customer')} className="mt-8 bg-primary text-white font-bold py-3 px-8 hover:bg-primary-hover transition-colors">PRIVATE CAR SERVICE</button>
+              </div>
             </div>
           </div>
         </section>
