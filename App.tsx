@@ -7,10 +7,20 @@ import { AdminPanel } from './components/AdminPanel';
 import type { Role, Screen } from './types';
 import { SearchIcon, CheckCircleIcon, BookingIcon, CarIcon, ChevronDownIcon, MapPinIcon, CalendarIcon, ClockIcon } from './components/Icons';
 
+// Type for booking details from the landing page form
+interface BookingDetails {
+  rideType: string;
+  pickup: string;
+  dropoff: string;
+  date: string;
+  time: string;
+  passengers: string;
+}
 
 const App: React.FC = () => {
   const [role, setRole] = useState<Role | null>(null);
   const [screen, setScreen] = useState<Screen>('Welcome');
+  const [initialBookingDetails, setInitialBookingDetails] = useState<BookingDetails | null>(null);
 
   const navigate = useCallback((newScreen: Screen) => {
     setScreen(newScreen);
@@ -34,22 +44,23 @@ const App: React.FC = () => {
   const logout = () => {
     setRole(null);
     setScreen('Welcome');
+    setInitialBookingDetails(null);
   };
 
   const renderContent = () => {
     if (!role) {
-      return <WelcomeScreen onRoleSelect={handleRoleSelect} />;
+      return <WelcomeScreen onRoleSelect={handleRoleSelect} setInitialBookingDetails={setInitialBookingDetails} />;
     }
 
     switch (role) {
       case 'Customer':
-        return <CustomerApp screen={screen} navigate={navigate} logout={logout} />;
+        return <CustomerApp screen={screen} navigate={navigate} logout={logout} initialBookingDetails={initialBookingDetails} clearInitialBookingDetails={() => setInitialBookingDetails(null)} />;
       case 'Driver':
         return <DriverApp screen={screen} navigate={navigate} logout={logout} />;
       case 'Admin':
         return <AdminPanel screen={screen} navigate={navigate} logout={logout} />;
       default:
-        return <WelcomeScreen onRoleSelect={handleRoleSelect} />;
+        return <WelcomeScreen onRoleSelect={handleRoleSelect} setInitialBookingDetails={setInitialBookingDetails} />;
     }
   };
 
@@ -62,10 +73,19 @@ const App: React.FC = () => {
 
 interface WelcomeScreenProps {
   onRoleSelect: (role: Role) => void;
+  setInitialBookingDetails: (details: BookingDetails | null) => void;
 }
 
-const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect }) => {
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect, setInitialBookingDetails }) => {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  
+  // State for landing page booking form
+  const [rideType, setRideType] = useState('');
+  const [pickup, setPickup] = useState('');
+  const [dropoff, setDropoff] = useState('');
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [passengers, setPassengers] = useState('');
 
   const NavLink: React.FC<{href: string; children: React.ReactNode}> = ({ href, children }) => (
     <a href={href} className="text-gray-800 hover:text-primary transition-colors">{children}</a>
@@ -77,6 +97,22 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect }) => {
     { q: 'How do I know if you operate at my airport?', a: 'We operate at all major airports across Ghana. You can check the "Where We Go" section on our homepage or enter your airport in the booking form to confirm.' },
     { q: 'What kind of vehicles do you use for airport transportation?', a: 'We offer a wide range of vehicles to suit your needs, including sedans, SUVs, and vans for larger groups. All vehicles are clean, modern, and regularly inspected for safety.' },
   ];
+
+  const handleBookNow = () => {
+    if (rideType) {
+      setInitialBookingDetails({
+        rideType,
+        pickup,
+        dropoff,
+        date,
+        time,
+        passengers,
+      });
+    } else {
+      setInitialBookingDetails(null); // No ride type selected, proceed with default flow
+    }
+    onRoleSelect('Customer');
+  };
 
   return (
     <div className="bg-white text-gray-800">
@@ -94,7 +130,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect }) => {
             </nav>
             <div className="flex items-center space-x-4">
               <button onClick={() => onRoleSelect('Customer')} className="hidden sm:block text-gray-800 hover:text-primary transition-colors">Sign in | Register</button>
-              <button onClick={() => onRoleSelect('Customer')} className="bg-accent text-primary font-bold py-2 px-6 hover:bg-yellow-400 transition-colors">Book Now</button>
+              <button onClick={handleBookNow} className="bg-accent text-primary font-bold py-2 px-6 hover:bg-yellow-400 transition-colors">Book Now</button>
             </div>
           </div>
         </div>
@@ -119,7 +155,25 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect }) => {
           {/* Form - positioned to overlap */}
           <div className="relative z-10 -mt-28 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="bg-white p-8 shadow-lg text-left text-gray-800">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Types of Ride */}
+                  <div>
+                    <label htmlFor="rideType" className="block text-lg font-semibold text-gray-800 mb-2">Types of Ride</label>
+                    <div className="relative">
+                      <select
+                        id="rideType"
+                        value={rideType}
+                        onChange={(e) => setRideType(e.target.value)}
+                        className={`w-full p-3 pl-4 pr-10 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-accent appearance-none bg-white ${!rideType ? 'text-gray-500' : 'text-gray-800'}`}
+                        required
+                      >
+                        <option value="" disabled>Select your ride</option>
+                        <option value="Instant Ride">Instant Ride</option>
+                        <option value="Scheduled Ride">Scheduled Ride</option>
+                      </select>
+                      <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-accent pointer-events-none" />
+                    </div>
+                  </div>
                   {/* Pick Up Location */}
                   <div>
                     <label htmlFor="pickup" className="block text-lg font-semibold text-gray-800 mb-2">Pick Up Location</label>
@@ -129,6 +183,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect }) => {
                         id="pickup"
                         placeholder="Kotoka International Airport, Ghana."
                         className="w-full p-3 pl-4 pr-10 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-accent placeholder-gray-500"
+                        value={pickup}
+                        onChange={e => setPickup(e.target.value)}
                       />
                       <MapPinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-accent" />
                     </div>
@@ -142,42 +198,52 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect }) => {
                         id="dropoff"
                         placeholder="East Legon, Accra."
                         className="w-full p-3 pl-4 pr-10 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-accent placeholder-gray-500"
+                        value={dropoff}
+                        onChange={e => setDropoff(e.target.value)}
                       />
                       <MapPinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-accent" />
                     </div>
                   </div>
                 </div>
-                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
-                  {/* Date */}
-                  <div>
-                    <label htmlFor="date" className="block text-lg font-semibold text-gray-800 mb-2">Date</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        id="date"
-                        placeholder="Enter Date"
-                        onFocus={(e) => (e.target.type = 'date')}
-                        onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
-                        className="w-full p-3 pl-4 pr-10 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-accent placeholder-gray-500"
-                      />
-                      <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-accent" />
-                    </div>
-                  </div>
-                  {/* Time */}
-                  <div>
-                    <label htmlFor="time" className="block text-lg font-semibold text-gray-800 mb-2">Time</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        id="time"
-                        placeholder="Enter Time"
-                        onFocus={(e) => (e.target.type = 'time')}
-                        onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
-                        className="w-full p-3 pl-4 pr-10 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-accent placeholder-gray-500"
-                      />
-                      <ClockIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-accent" />
-                    </div>
-                  </div>
+                <div className={`mt-6 grid grid-cols-1 sm:grid-cols-2 ${rideType === 'Scheduled Ride' ? 'lg:grid-cols-4' : 'lg:grid-cols-2'} gap-6 items-end`}>
+                  {rideType === 'Scheduled Ride' && (
+                    <>
+                      {/* Date */}
+                      <div>
+                        <label htmlFor="date" className="block text-lg font-semibold text-gray-800 mb-2">Date</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            id="date"
+                            placeholder="Enter Date"
+                            onFocus={(e) => (e.target.type = 'date')}
+                            onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
+                            className="w-full p-3 pl-4 pr-10 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-accent placeholder-gray-500"
+                            value={date}
+                            onChange={e => setDate(e.target.value)}
+                          />
+                          <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-accent" />
+                        </div>
+                      </div>
+                      {/* Time */}
+                      <div>
+                        <label htmlFor="time" className="block text-lg font-semibold text-gray-800 mb-2">Time</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            id="time"
+                            placeholder="Enter Time"
+                            onFocus={(e) => (e.target.type = 'time')}
+                            onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
+                            className="w-full p-3 pl-4 pr-10 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-accent placeholder-gray-500"
+                            value={time}
+                            onChange={e => setTime(e.target.value)}
+                          />
+                          <ClockIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-accent" />
+                        </div>
+                      </div>
+                    </>
+                  )}
                   {/* Passaengers */}
                   <div>
                     <label htmlFor="passengers" className="block text-lg font-semibold text-gray-800 mb-2">Passaengers</label>
@@ -186,11 +252,13 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect }) => {
                       id="passengers"
                       placeholder="No. of Passangers"
                       className="w-full p-3 pl-4 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-accent placeholder-gray-500"
+                      value={passengers}
+                      onChange={e => setPassengers(e.target.value)}
                     />
                   </div>
                   {/* Book Now Button */}
                   <div>
-                    <button onClick={() => onRoleSelect('Customer')} className="w-full bg-accent text-primary font-bold py-3 px-6 hover:bg-yellow-400 transition-colors text-lg">Book Now</button>
+                    <button onClick={handleBookNow} className="w-full bg-accent text-primary font-bold py-3 px-6 hover:bg-yellow-400 transition-colors text-lg">Book Now</button>
                   </div>
                 </div>
               </div>
@@ -218,14 +286,14 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect }) => {
         {/* Private Car Service Section */}
         <section className="py-16" style={{ backgroundColor: '#660033' }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="relative flex flex-col md:flex-row items-center">
-                <div className="md:w-1/2 w-full bg-white p-8 md:p-12 shadow-xl relative z-10">
+                <div className="relative flex flex-col-reverse md:flex-row items-center">
+                <div className="md:w-1/2 w-full bg-white p-8 md:p-12 shadow-xl relative z-10 mt-8 md:mt-0">
                     <h2 className="text-4xl font-display font-bold text-gray-800 leading-tight">Private Car Service</h2>
                     <hr className="my-6 border-gray-800 w-24 border-t-2" />
                     <p className="mt-4 text-lg text-gray-600">Travel on your schedule with a private driver. Book by the hour or choose point-to-point transfers.</p>
                     <button onClick={() => onRoleSelect('Customer')} className="mt-8 bg-primary text-white font-bold py-3 px-8 hover:bg-primary-hover transition-colors">PRIVATE CAR SERVICE</button>
                 </div>
-                <div className="md:w-3/5 w-full md:-ml-24 mt-8 md:mt-0">
+                <div className="md:w-3/5 w-full md:-ml-24">
                     <img src="https://i.ibb.co/99HNcLqx/Private-Car-Service.png" alt="Private Car Service" className="shadow-xl w-full h-auto object-cover"/>
                 </div>
                 </div>

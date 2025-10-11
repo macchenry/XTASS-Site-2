@@ -1,11 +1,24 @@
+
 // SCREEN 2 UPDATED ONLY — All other screens remain untouched. Removed duplicate contact icons from the Welcome/Login screen.
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { Screen, NavigationProps } from '../types';
 import { Button, Input, Header, BottomNav, FloatingActionButtons, ScreenContainer, Toast, Modal } from './shared/UI';
 import { UserIcon, LockIcon, PhoneIcon, MapPinIcon, UsersIcon, BriefcaseIcon, CalendarIcon, ClockIcon, CreditCardIcon, ArrowRightIcon, CheckCircleIcon, XCircleIcon, ChevronLeftIcon, EyeIcon, EyeOffIcon, MailIcon, CameraIcon, ChevronDownIcon, ShieldIcon, GoogleIcon, UploadCloudIcon, CarIcon, BabyIcon, BusIcon, SnowflakeIcon, FileTextIcon } from './Icons';
 
+// Type for booking details from the landing page form
+interface BookingDetails {
+  rideType: string;
+  pickup: string;
+  dropoff: string;
+  date: string;
+  time: string;
+  passengers: string;
+}
+
 interface CustomerAppProps extends NavigationProps {
   screen: Screen;
+  initialBookingDetails: BookingDetails | null;
+  clearInitialBookingDetails: () => void;
 }
 
 // Define the Car type for better type safety
@@ -43,7 +56,7 @@ function usePrevious(value: Screen): Screen | undefined {
     return ref.current;
 }
 
-export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logout }) => {
+export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logout, initialBookingDetails, clearInitialBookingDetails }) => {
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   const [otpOrigin, setOtpOrigin] = useState<Screen>('Register');
   const [phoneForOTP, setPhoneForOTP] = useState({ phone: '241234567', code: '+233' });
@@ -54,6 +67,20 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
   const [shuttleFlowOrigin, setShuttleFlowOrigin] = useState<Screen>('TripDetailsInput');
   const [rentalDetails, setRentalDetails] = useState<RentalDetails | null>(null);
   const previousScreen = usePrevious(screen);
+  const [rideDetails, setRideDetails] = useState<BookingDetails | null>(null);
+
+  useEffect(() => {
+    // If user is logged in and lands on service selection, check for pre-filled data from landing page
+    if (screen === 'ServiceSelection' && initialBookingDetails) {
+      setRideDetails(initialBookingDetails);
+      if (initialBookingDetails.rideType === 'Instant Ride') {
+        navigate('TripDetailsInput');
+      } else if (initialBookingDetails.rideType === 'Scheduled Ride') {
+        navigate('ScheduleRide');
+      }
+      clearInitialBookingDetails();
+    }
+  }, [screen, initialBookingDetails, navigate, clearInitialBookingDetails]);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -105,7 +132,8 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
                   }
                   navigate(nextScreen);
               }} 
-              setVehicleTypeForFilter={setSelectedVehicleClassInfo} 
+              setVehicleTypeForFilter={setSelectedVehicleClassInfo}
+              initialDetails={rideDetails}
           />;
       case 'ScheduleRide':
           return <ScheduleRideScreen 
@@ -115,7 +143,8 @@ export const CustomerApp: React.FC<CustomerAppProps> = ({ screen, navigate, logo
                   }
                   navigate(nextScreen);
               }} 
-              setVehicleTypeForFilter={setSelectedVehicleClassInfo} 
+              setVehicleTypeForFilter={setSelectedVehicleClassInfo}
+              initialDetails={rideDetails}
           />;
       case 'CarRental':
           return <CarRentalScreen navigate={navigate} setRentalDuration={setRentalDuration} setVehicleTypeForFilter={setSelectedVehicleClassInfo} setRentalDetails={setRentalDetails} />;
@@ -368,7 +397,7 @@ const AuthScreen: React.FC<{ navigate: (s: Screen) => void, isLogin: boolean, lo
                 </div>
             </Modal>
             
-            <button onClick={() => isLogin ? navigate('Welcome') : navigate('Login')} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Go back">
+            <button onClick={() => isLogin && logout ? logout() : navigate('Login')} className="absolute top-4 left-4 text-primary p-2 rounded-full hover:bg-gray-200 z-10" aria-label="Go back">
                 <ChevronLeftIcon className="w-6 h-6" />
             </button>
             <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-lg mt-12">
@@ -855,8 +884,13 @@ const ServiceSelectionScreen: React.FC<NavigationProps & { setFlow: (flow: 'shut
 
 interface TripDetailsInputScreenProps extends NavigationProps {
   setVehicleTypeForFilter: (info: VehicleClassInfo | null) => void;
+  initialDetails: BookingDetails | null;
 }
-const TripDetailsInputScreen: React.FC<TripDetailsInputScreenProps> = ({ navigate, setVehicleTypeForFilter }) => {
+const TripDetailsInputScreen: React.FC<TripDetailsInputScreenProps> = ({ navigate, setVehicleTypeForFilter, initialDetails }) => {
+    const [pickup, setPickup] = useState(initialDetails?.pickup || "Kotoka Int'l Airport, Terminal 3");
+    const [destination, setDestination] = useState(initialDetails?.dropoff || '');
+    const [passengers, setPassengers] = useState(initialDetails?.passengers || '');
+    const [luggage, setLuggage] = useState('');
     const [childSeat, setChildSeat] = useState(false);
     const [wheelchairAccess, setWheelchairAccess] = useState(false);
     const [vehicleType, setVehicleType] = useState<string | null>(null);
@@ -947,10 +981,10 @@ const TripDetailsInputScreen: React.FC<TripDetailsInputScreenProps> = ({ navigat
                     </div>
                 </div>
 
-                <Input id="pickup" label="Pickup Location" type="text" placeholder="Kotoka International Airport" defaultValue="Kotoka Int'l Airport, Terminal 3" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
-                <Input id="destination" label="Destination" type="text" placeholder="Enter your destination" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
-                <Input id="passengers" label="Passengers" type="number" placeholder="1" icon={<UsersIcon className="w-5 h-5 text-gray-400" />} />
-                <Input id="luggage" label="Luggage" type="number" placeholder="2" icon={<BriefcaseIcon className="w-5 h-5 text-gray-400" />} />
+                <Input id="pickup" label="Pick Up Location" type="text" placeholder="Kotoka International Airport" value={pickup} onChange={e => setPickup(e.target.value)} icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
+                <Input id="destination" label="Drop Off Location" type="text" placeholder="Enter your destination" value={destination} onChange={e => setDestination(e.target.value)} icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
+                <Input id="passengers" label="Passengers" type="number" placeholder="1" value={passengers} onChange={e => setPassengers(e.target.value)} icon={<UsersIcon className="w-5 h-5 text-gray-400" />} />
+                <Input id="luggage" label="Luggage" type="number" placeholder="2" value={luggage} onChange={e => setLuggage(e.target.value)} icon={<BriefcaseIcon className="w-5 h-5 text-gray-400" />} />
                 
                 <div>
                     <h3 className="block text-sm font-medium text-gray-700 mb-2">Other Requirements</h3>
@@ -1084,13 +1118,18 @@ const TripDetailsInputScreen: React.FC<TripDetailsInputScreenProps> = ({ navigat
 
 interface ScheduleRideScreenProps extends NavigationProps {
   setVehicleTypeForFilter: (info: VehicleClassInfo | null) => void;
+  initialDetails: BookingDetails | null;
 }
-const ScheduleRideScreen: React.FC<ScheduleRideScreenProps> = ({ navigate, setVehicleTypeForFilter }) => {
+const ScheduleRideScreen: React.FC<ScheduleRideScreenProps> = ({ navigate, setVehicleTypeForFilter, initialDetails }) => {
+    const [pickup, setPickup] = useState(initialDetails?.pickup || "Kotoka Int'l Airport, Terminal 3");
+    const [destination, setDestination] = useState(initialDetails?.dropoff || '');
+    const [passengers, setPassengers] = useState(initialDetails?.passengers || '');
+    const [luggage, setLuggage] = useState('');
     const [childSeat, setChildSeat] = useState(false);
     const [wheelchairAccess, setWheelchairAccess] = useState(false);
     const [vehicleType, setVehicleType] = useState<string | null>(null);
-    const [scheduledDate, setScheduledDate] = useState('');
-    const [scheduledTime, setScheduledTime] = useState('');
+    const [scheduledDate, setScheduledDate] = useState(initialDetails?.date || '');
+    const [scheduledTime, setScheduledTime] = useState(initialDetails?.time || '');
 
     // State and refs for new features
     const [documentType, setDocumentType] = useState('');
@@ -1203,10 +1242,10 @@ const ScheduleRideScreen: React.FC<ScheduleRideScreenProps> = ({ navigate, setVe
                     onChange={e => setScheduledTime(e.target.value)}
                 />
             </div>
-            <Input id="pickup" label="Pickup Location" type="text" placeholder="Kotoka International Airport" defaultValue="Kotoka Int'l Airport, Terminal 3" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
-            <Input id="destination" label="Destination" type="text" placeholder="Enter your destination" icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
-            <Input id="passengers" label="Passengers" type="number" placeholder="1" icon={<UsersIcon className="w-5 h-5 text-gray-400" />} />
-            <Input id="luggage" label="Luggage" type="number" placeholder="2" icon={<BriefcaseIcon className="w-5 h-5 text-gray-400" />} />
+            <Input id="pickup" label="Pick Up Location" type="text" placeholder="Kotoka International Airport" value={pickup} onChange={e => setPickup(e.target.value)} icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
+            <Input id="destination" label="Drop Off Location" type="text" placeholder="Enter your destination" value={destination} onChange={e => setDestination(e.target.value)} icon={<MapPinIcon className="w-5 h-5 text-gray-400" />} />
+            <Input id="passengers" label="Passengers" type="number" placeholder="1" value={passengers} onChange={e => setPassengers(e.target.value)} icon={<UsersIcon className="w-5 h-5 text-gray-400" />} />
+            <Input id="luggage" label="Luggage" type="number" placeholder="2" value={luggage} onChange={e => setLuggage(e.target.value)} icon={<BriefcaseIcon className="w-5 h-5 text-gray-400" />} />
             
             <div>
                 <h3 className="block text-sm font-medium text-gray-700 mb-2">Other Requirements</h3>
