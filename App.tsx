@@ -1,3 +1,4 @@
+
 // SCREEN 1 ONLY UPDATED — Recreated the "Airport Transportation" section to visually match the provided reference image, including the overlapping card layout, shadows, rounded corners, and typography. The rest of the page and app remain unchanged.
 import React, { useState, useCallback } from 'react';
 import { CustomerApp } from './components/CustomerApp';
@@ -515,7 +516,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect, setInitialB
           </section>
 
           {/* Private Car Service Section */}
-            <section className="py-16 bg-white">
+            <section className="py-16" style={{ backgroundColor: '#660032' }}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="relative flex flex-col-reverse md:flex-row items-center">
                     <div className="md:w-1/2 w-full bg-white p-8 md:p-12 shadow-xl relative z-10 md:mt-0 mt-8">
