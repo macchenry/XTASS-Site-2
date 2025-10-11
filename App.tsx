@@ -239,7 +239,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect, setInitialB
             <div>
               <h4 className="font-bold text-lg mb-4">Legal</h4>
               <ul className="space-y-3 text-gray-300">
-                <li><a href="#" className="hover:text-white transition-colors">Terms & Conditions</a></li>
+                <li><a href="#" onClick={(e) => {e.preventDefault(); setView('terms')}} className="hover:text-white transition-colors">Terms & Conditions</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Cookie Policy</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Refund & Cancellation Policy</a></li>
@@ -737,6 +737,118 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRoleSelect, setInitialB
                     )}
                   </div>
                 ))}
+              </div>
+            </div>
+          </section>
+
+          {commonFooter}
+        </main>
+      )}
+
+      {view === 'terms' && (
+        <main>
+          {/* Hero for Terms page */}
+          <div className="relative bg-primary text-white">
+            <div 
+              className="absolute inset-0 bg-cover bg-center opacity-30" 
+              style={{backgroundImage: "url('https://i.ibb.co/svMbtFfn/XTASS-Hero-Banner-2.jpg')"}}>
+            </div>
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32 text-center">
+              <h1 className="text-4xl md:text-5xl font-display font-bold">Terms & Conditions</h1>
+              <p className="mt-4 text-lg text-white/90">Please read our terms carefully before using our services.</p>
+            </div>
+          </div>
+          
+          {/* Terms and Conditions Content */}
+          <section className="py-16 md:py-24 bg-white">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="prose lg:prose-lg max-w-none text-gray-700 space-y-6">
+                  <h4>1. Introduction</h4>
+                  <p>Welcome to XTASS. These Terms and Conditions govern your access to and use of our transportation services, including instant rides, scheduled rides, rental rides, and any related features or platforms provided by XTASS. By using our website, mobile app, or booking services, you agree to be bound by these Terms. If you do not agree, please do not use our services.</p>
+                  <p>XTASS operates as a professional airport and city transportation service in Ghana, connecting customers with verified drivers and vehicles for safe, reliable, and convenient travel.</p>
+
+                  <h4>2. Definitions</h4>
+                  <p>“XTASS,” “we,” “us,” or “our” refers to XTASS, its affiliates, and authorized service partners.<br/>
+                  “Customer,” “you,” or “user” refers to anyone who books, uses, or accesses XTASS services.<br/>
+                  “Driver” refers to any individual or partner who provides transportation under the XTASS platform.<br/>
+                  “Service” refers to any transportation or related service offered by XTASS, including Instant Ride, Scheduled Ride, and Rental Ride.</p>
+
+                  <h4>3. Service Use</h4>
+                  <p>You agree to use XTASS services only for lawful purposes and in accordance with these Terms. When booking a ride, you are responsible for providing accurate information such as pickup location, destination, and contact details.</p>
+                  <p>XTASS may refuse or cancel bookings if the information provided is false, incomplete, or suspected of misuse. Misbehavior toward drivers or misuse of vehicles may result in suspension or termination of your account.</p>
+
+                  <h4>4. Booking and Confirmation</h4>
+                  <p>Bookings can be made through the XTASS website or mobile application. Once a booking is completed, you will receive a confirmation message via email or SMS containing the ride details.</p>
+                  <ul>
+                    <li>For <strong>Scheduled Rides</strong>, your driver will arrive at the confirmed time and location.</li>
+                    <li>For <strong>Instant Rides</strong>, the system automatically assigns the nearest available driver.</li>
+                    <li>For <strong>Rental Rides</strong>, the service includes a dedicated driver for the agreed duration.</li>
+                  </ul>
+                  <p>XTASS reserves the right to reassign or cancel bookings in case of operational issues, safety concerns, or driver unavailability.</p>
+
+                  <h4>5. Payments and Pricing</h4>
+                  <p>XTASS offers transparent and competitive pricing across all service tiers — Premium, Business, Economy, and Basic.</p>
+                  <ul>
+                    <li>All fares are displayed before booking confirmation.</li>
+                    <li>Prices may vary depending on distance, duration, time of day, and service type.</li>
+                    <li>Payments can be made via credit/debit cards, mobile money, or other approved online payment methods.</li>
+                    <li>Once a ride is completed, customers receive a payment notification immediately and a receipt afterward via email or app.</li>
+                    <li>Any unpaid or disputed charges must be resolved promptly with XTASS customer support.</li>
+                  </ul>
+
+                  <h4>6. Cancellations and Refunds</h4>
+                  <ul>
+                    <li><strong>Free cancellation:</strong> Available if done before the driver is dispatched or within the allowed time frame.</li>
+                    <li><strong>Late cancellation:</strong> May result in a small cancellation fee.</li>
+                    <li><strong>No-show:</strong> If the driver arrives and the customer is not present after a waiting period, the full fare may be charged.</li>
+                  </ul>
+                  <p>Refunds, where applicable, will be processed within a reasonable period after verification.</p>
+
+                  <h4>7. Safety and Conduct</h4>
+                  <p>XTASS prioritizes the safety of both passengers and drivers.</p>
+                  <ul>
+                    <li>All drivers undergo strict background checks and continuous monitoring.</li>
+                    <li>Vehicles are regularly maintained to meet high safety standards.</li>
+                    <li>Customers are expected to behave respectfully toward drivers and other passengers.</li>
+                  </ul>
+                  <p>XTASS reserves the right to deny service or block users who engage in inappropriate, unsafe, or unlawful behavior.</p>
+
+                  <h4>8. Liability</h4>
+                  <p>XTASS acts as a transportation service facilitator. While we take every measure to ensure reliability and safety, XTASS is not liable for any:</p>
+                  <ul>
+                    <li>Delays due to traffic, weather, or unforeseen circumstances.</li>
+                    <li>Lost or damaged personal belongings during rides.</li>
+                    <li>Indirect, incidental, or consequential damages resulting from use of the service.</li>
+                  </ul>
+                  <p>However, XTASS will make reasonable efforts to assist customers in resolving any issues that occur during their trip.</p>
+
+                  <h4>9. Account and Data Protection</h4>
+                  <p>If you create an account on the XTASS platform, you are responsible for maintaining the confidentiality of your login details. You agree not to share your credentials with others or use another person’s account without permission.</p>
+                  <p>XTASS values your privacy and handles all personal data in accordance with applicable data protection laws. Personal information such as name, contact details, and payment information is securely stored and never shared with unauthorized parties.</p>
+
+                  <h4>10. Service Modifications</h4>
+                  <p>XTASS may modify, update, or discontinue certain features or services at any time to improve performance, security, or customer experience. Notice will be provided in cases of major updates that affect how the service operates.</p>
+
+                  <h4>11. Intellectual Property</h4>
+                  <p>All content, trademarks, logos, designs, and materials on the XTASS platform are the property of XTASS. You may not copy, reproduce, or distribute any materials without written consent.</p>
+
+                  <h4>12. Governing Law</h4>
+                  <p>These Terms and Conditions are governed by the laws of the Republic of Ghana. Any disputes arising from the use of XTASS services shall be resolved under Ghanaian jurisdiction.</p>
+
+                  <h4>13. Limitation of Use</h4>
+                  <p>Users must not use XTASS for unlawful activities, transport of illegal goods, or any action that violates national laws or public safety regulations. Misuse of the platform may result in account suspension or legal action.</p>
+
+                  <h4>14. Feedback and Complaints</h4>
+                  <p>XTASS welcomes customer feedback to continually improve our services. For any complaints, lost item reports, or refund requests, please contact our customer support team through the website, app, or official email. We aim to resolve all issues fairly and promptly.</p>
+
+                  <h4>15. Changes to Terms</h4>
+                  <p>XTASS reserves the right to update these Terms & Conditions at any time. Revised terms will take effect upon publication on our website or app. Continued use of our services after updates implies your acceptance of the new terms.</p>
+
+                  <h4>16. Contact Information</h4>
+                  <p>XTASS Customer Support<br/>
+                  📧 Email: <a href="mailto:support@xtass.com">support@xtass.com</a><br/>
+                  📞 Phone: +233 XXX XXX XXX<br/>
+                  🌐 Website: <a href="https://www.xtass.com" target="_blank" rel="noopener noreferrer">www.xtass.com</a></p>
               </div>
             </div>
           </section>
